@@ -22,14 +22,15 @@ then the prediction is a **True Positive (TP)**, otherwise the prediction is a *
 Here's a great visual from [2]:
 
 <div align="center">
-    <img src="images/intersection_over_union.png" height="250px" />
+    <img src="resources/intersection_over_union.png" height="250px" />
 </div>
 
 ### Precision
-Measures how much you can trust a Positive prediction from the model:
+Measures how much you can trust a Positive prediction from the model. Out of all positive predictions, calculates what
+proportion are correctly identified.
 
 <div align="center">
-    <img src="images/precision.png" height="100px" />
+    <img src="resources/precision.png" height="100px" />
 </div>
 
 
@@ -38,7 +39,7 @@ Measures how well the model does in finding all the positives. `TP` gives the nu
 the number of objects that were present but missed by the model. Together, `TP + FN` equals the total number of labeled objects.
 
 <div align="center">
-    <img src="images/recall.png" height="100px" />
+    <img src="resources/recall.png" height="100px" />
 </div>
 
 
