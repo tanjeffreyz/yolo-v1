@@ -1,0 +1,8 @@
+DATA_ROOT = 'data'
+
+BATCH_SIZE = 128
+IMAGE_SIZE = (448, 448)
+
+S = 7
+B = 2
+
