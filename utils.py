@@ -1,4 +1,20 @@
+import json
+import os
 import config
+
+
+def load_classes():
+    if os.path.exists(config.CLASSES_PATH):
+        with open(config.CLASSES_PATH, 'r') as file:
+            return json.load(file)
+    new_dict = {}
+    save_classes(new_dict)
+    return new_dict
+
+
+def save_classes(obj):
+    with open(config.CLASSES_PATH, 'w') as file:
+        json.dump(obj, file, indent=2)
 
 
 def get_dimensions(label):
@@ -14,10 +30,12 @@ def get_bounding_boxes(label):
     objects = label['annotation']['object']
     for obj in objects:
         box = obj['bndbox']
-        boxes.append([
+        coords = (
             int(int(box['xmin']) * x_scale),
             int(int(box['xmax']) * x_scale),
             int(int(box['ymin']) * y_scale),
             int(int(box['ymax']) * y_scale)
-        ])
+        )
+        name = obj['name']
+        boxes.append((name, coords))
     return boxes
