@@ -65,11 +65,11 @@ class YoloPascalVocDataset(Dataset):
                 bbox_index = boxes.get(key, 0)
                 if bbox_index < config.B:
                     bbox_truth = (
-                        mid_x - col * grid_size_x,  # X coordinate relative to grid square
-                        mid_y - row * grid_size_y,  # Y coordinate relative to grid square
-                        x_max - x_min,              # Width
-                        y_max - y_min,              # Height
-                        1.0                         # Confidence
+                        (mid_x - col * grid_size_x) / grid_size_x,      # X coordinate relative to grid square
+                        (mid_y - row * grid_size_y) / grid_size_y,      # Y coordinate relative to grid square
+                        (x_max - x_min) / config.IMAGE_SIZE[0],         # Width
+                        (y_max - y_min) / config.IMAGE_SIZE[1],         # Height
+                        1.0                                             # Confidence
                     )
                     bbox_start = 5 * bbox_index
                     bbox_end = 5 * (bbox_index + 1)

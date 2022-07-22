@@ -1,8 +1,40 @@
+import torch
 import json
 import os
 import config
 import matplotlib.patches as patches
 from matplotlib import pyplot as plt
+
+
+class SumSquaredErrorLoss():
+    def __init__(self):
+        self.lambda_coord = 5
+        self.lambda_noobj = 0.5
+
+    def __call__(self, p, a):
+        i_obj = bbox_attr(a, 4)             # Indicator variable, 1 if bbox contains object
+        i_obj_single = i_obj[:, :, 0:1]     # Same indicator, but with depth=1 for broadcasting with class_losses
+        i_noobj = 1 - i_obj                 # Opposite, 1's if no object
+
+        # XY position losses
+        x_pos = bbox_attr(p, 0) - bbox_attr(a, 0)
+        y_pos = bbox_attr(p, 1) - bbox_attr(a, 1)
+        pos_losses = x_pos ** 2 + y_pos ** 2
+
+        # Bbox dimension losses
+        width = torch.sqrt(bbox_attr(p, 2)) - torch.sqrt(bbox_attr(a, 2))
+        height = torch.sqrt(bbox_attr(p, 3)) - torch.sqrt(bbox_attr(a, 3))
+        dim_losses = width ** 2 + height ** 2
+
+        # Confidence losses
+        confidence_losses = (bbox_attr(p, 4) - i_obj) ** 2
+
+        # Classification losses
+        class_losses = (p[:, :, 5*config.B:] - a[:, :, 5*config.B:]) ** 2
+
+        return torch.sum(i_obj * (self.lambda_coord * (pos_losses + dim_losses) + confidence_losses)) \
+               + torch.sum(i_obj_single * class_losses) \
+               + torch.sum(i_noobj * self.lambda_noobj * confidence_losses)
 
 
 def load_classes():
@@ -41,6 +73,12 @@ def get_bounding_boxes(label):
         name = obj['name']
         boxes.append((name, coords))
     return boxes
+
+
+def bbox_attr(data, i):
+    """Returns the Ith attribute of each bounding box in data."""
+
+    return data[:, :, i:5*config.B:5]
 
 
 def plot_boxes(data, labels):

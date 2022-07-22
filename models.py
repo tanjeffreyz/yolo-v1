@@ -10,15 +10,18 @@ class YOLOv1(nn.Module):
 
         layers = [
             nn.Conv2d(3, 64, kernel_size=7, stride=2, padding=3),  # Conv 1
+            nn.LeakyReLU(negative_slope=0.1),
             nn.MaxPool2d(kernel_size=2, stride=2),
 
             nn.Conv2d(64, 192, kernel_size=3, padding=1),          # Conv 2
+            nn.LeakyReLU(negative_slope=0.1),
             nn.MaxPool2d(kernel_size=2, stride=2),
 
             nn.Conv2d(192, 128, kernel_size=1),         # Conv 3
             nn.Conv2d(128, 256, kernel_size=3, padding=1),
             nn.Conv2d(256, 256, kernel_size=1),
             nn.Conv2d(256, 512, kernel_size=3, padding=1),
+            nn.LeakyReLU(negative_slope=0.1),
             nn.MaxPool2d(kernel_size=2, stride=2)
         ]
 
@@ -30,6 +33,7 @@ class YOLOv1(nn.Module):
         layers += [
             nn.Conv2d(512, 512, kernel_size=1),
             nn.Conv2d(512, 1024, kernel_size=3, padding=1),
+            nn.LeakyReLU(negative_slope=0.1),
             nn.MaxPool2d(kernel_size=2, stride=2)
         ]
 
@@ -40,15 +44,18 @@ class YOLOv1(nn.Module):
             ]
         layers += [
             nn.Conv2d(1024, 1024, kernel_size=3, padding=1),
-            nn.Conv2d(1024, 1024, kernel_size=3, stride=2, padding=1)
+            nn.Conv2d(1024, 1024, kernel_size=3, stride=2, padding=1),
+            nn.LeakyReLU(negative_slope=0.1)
         ]
 
         for _ in range(2):                              # Conv 6
             layers.append(nn.Conv2d(1024, 1024, kernel_size=3, padding=1))
+        layers.append(nn.LeakyReLU(negative_slope=0.1))
 
         layers += [
             nn.Flatten(),
             nn.Linear(config.S * config.S * 1024, 4096),            # Linear 1
+            nn.LeakyReLU(negative_slope=0.1),
             nn.Linear(4096, config.S * config.S * self.depth)       # Linear 2
         ]
 
@@ -60,10 +67,6 @@ class YOLOv1(nn.Module):
             (x.size(dim=0), config.S, config.S, self.depth)
         )
 
-    @staticmethod
-    def loss_function(actual, predicted):
-        pass
-
 
 class Probe(nn.Module):
     def __init__(self, name):
@@ -74,11 +77,3 @@ class Probe(nn.Module):
         print(f"\nProbe '{self.name}':")
         print(x.size())
         return x
-
-
-if __name__ == '__main__':
-    batch_size = 128
-    test_model = YOLOv1()
-    test_tensor = torch.rand((batch_size, 3, config.IMAGE_SIZE[0], config.IMAGE_SIZE[1]))
-    result = test_model.forward(test_tensor)
-    assert tuple(result.size()) == (128, config.S, config.S, test_model.depth)
