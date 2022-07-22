@@ -12,6 +12,10 @@ images:
 PyTorch implementation of the YOLO architecture presented in "You Only Look Once: Unified, Real-Time Object Detection" by Joseph Redmon, Santosh Divvala, Ross Girshick, Ali Farhadi
 
 
+## Results
+
+
+
 ## Notes
 ### Intersection Over Union (IOU)
 Area of intersection between ground truth and predicted bounding box, divided by the area of their union. The confidence score 
