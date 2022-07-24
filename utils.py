@@ -12,9 +12,9 @@ class SumSquaredErrorLoss():
         self.lambda_noobj = 0.5
 
     def __call__(self, p, a):
-        i_obj = bbox_attr(a, 4)             # Indicator variable, 1 if bbox contains object
-        i_obj_single = i_obj[:, :, 0:1]     # Same indicator, but with depth=1 for broadcasting with class_losses
-        i_noobj = 1 - i_obj                 # Opposite, 1's if no object
+        obj_ij = bbox_attr(a, 4)            # Indicator variable, 1 if grid I, bbox J contains object
+        noobj_ij = 1 - obj_ij               # Opposite, 1's if grid I, bbox J contains NO object
+        obj_i = obj_ij[:, :, 0:1]           # 1 if grid I has any object at all
 
         # XY position losses
         x_pos = bbox_attr(p, 0) - bbox_attr(a, 0)
@@ -27,14 +27,14 @@ class SumSquaredErrorLoss():
         dim_losses = width ** 2 + height ** 2
 
         # Confidence losses
-        confidence_losses = (bbox_attr(p, 4) - i_obj) ** 2
+        confidence_losses = (bbox_attr(p, 4) - obj_ij) ** 2
 
         # Classification losses
         class_losses = (p[:, :, 5*config.B:] - a[:, :, 5*config.B:]) ** 2
 
-        return torch.sum(i_obj * (self.lambda_coord * (pos_losses + dim_losses) + confidence_losses)) \
-               + torch.sum(i_obj_single * class_losses) \
-               + torch.sum(i_noobj * self.lambda_noobj * confidence_losses)
+        return torch.sum(obj_ij * (self.lambda_coord * (pos_losses + dim_losses) + confidence_losses)) \
+               + torch.sum(obj_i * class_losses) \
+               + torch.sum(noobj_ij * self.lambda_noobj * confidence_losses)
 
 
 def load_classes():

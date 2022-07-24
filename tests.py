@@ -6,7 +6,7 @@ from utils import SumSquaredErrorLoss
 
 
 class TestModel(unittest.TestCase):
-    def test_model(self):
+    def test_shape(self):
         batch_size = 128
         test_model = YOLOv1()
         test_tensor = torch.rand((batch_size, 3, config.IMAGE_SIZE[0], config.IMAGE_SIZE[1]))
@@ -15,12 +15,46 @@ class TestModel(unittest.TestCase):
 
 
 class TestLossFunction(unittest.TestCase):
+    SHAPE = (config.S, config.S, 5 * config.B + config.C)
+
     def test_zeros(self):
-        test = torch.zeros((config.S, config.S, 5 * config.B + config.C))
+        test = torch.zeros(TestLossFunction.SHAPE)
         loss_func = SumSquaredErrorLoss()
         result = loss_func(test, test)
         self.assertEqual(tuple(result.size()), ())
-        self.assertEqual(result.item(), 0)
+        self.assertEqual(0, result.item())
+
+    def test_single_bbox(self):
+        truth = torch.zeros(TestLossFunction.SHAPE)
+        truth[0, 0, 4] = 1.0        # Bbox confidence
+        truth[0, 0, -1] = 1.0       # Class
+        pred = torch.zeros(TestLossFunction.SHAPE)
+        pred[0, 0, 0:5] = torch.ones(5)
+        loss_func = SumSquaredErrorLoss()
+        result = loss_func(pred, truth)
+        self.assertEqual(tuple(result.size()), ())
+        self.assertEqual(21.0, result.item())
+
+    def test_double_bbox(self):
+        truth = torch.zeros(TestLossFunction.SHAPE)
+        truth[0, 0, 4] = 1.0        # Bbox confidences
+        truth[0, 0, 9] = 1.0
+        truth[0, 0, -1] = 1.0       # Class
+        pred = torch.zeros(TestLossFunction.SHAPE)
+        pred[0, 0, 0:10] = torch.ones(10)
+        loss_func = SumSquaredErrorLoss()
+        result = loss_func(pred, truth)
+        self.assertEqual(tuple(result.size()), ())
+        self.assertEqual(41.0, result.item())
+
+    def test_noobj(self):
+        truth = torch.zeros(TestLossFunction.SHAPE)
+        pred = torch.zeros(TestLossFunction.SHAPE)
+        pred[0, 0, 0:10] = torch.ones(10)
+        loss_func = SumSquaredErrorLoss()
+        result = loss_func(pred, truth)
+        self.assertEqual(tuple(result.size()), ())
+        self.assertEqual(1.0, result.item())
 
 
 if __name__ == '__main__':
