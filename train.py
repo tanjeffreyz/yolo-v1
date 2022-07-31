@@ -15,7 +15,7 @@ device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 writer = SummaryWriter()
 now = datetime.now()
 
-model = YOLOv1()
+model = YOLOv1().to(device)
 loss_function = utils.SumSquaredErrorLoss()
 optimizer = torch.optim.SGD(
     model.parameters(),
