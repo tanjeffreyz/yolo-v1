@@ -6,7 +6,7 @@ import matplotlib.patches as patches
 from matplotlib import pyplot as plt
 
 
-class SumSquaredErrorLoss():
+class SumSquaredErrorLoss:
     def __init__(self):
         self.lambda_coord = 5
         self.lambda_noobj = 0.5
