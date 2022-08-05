@@ -47,6 +47,9 @@ def load_classes():
 
 
 def save_classes(obj):
+    folder = os.path.dirname(config.CLASSES_PATH)
+    if not os.path.exists(folder):
+        os.makedirs(folder)
     with open(config.CLASSES_PATH, 'w') as file:
         json.dump(obj, file, indent=2)
 
