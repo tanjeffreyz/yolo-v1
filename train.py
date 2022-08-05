@@ -74,7 +74,6 @@ def save_metrics():
 #####################
 for epoch in tqdm(range(warmup_epochs + config.EPOCHS), desc='Epoch'):
     train_loss = 0
-    accuracy = 0
     for data, labels in tqdm(train_loader, desc='Train', leave=False):
         data = data.to(device)
         labels = labels.to(device)
@@ -86,20 +85,16 @@ for epoch in tqdm(range(warmup_epochs + config.EPOCHS), desc='Epoch'):
         optimizer.step()
 
         train_loss += loss.item() / len(train_loader)
-        accuracy += labels.eq(torch.argmax(predictions, 1)).sum().item() / len(train_set)
         del data, labels
     increasing_sched.step()       # Step schedulers once an epoch
     decreasing_sched.step()
 
     train_losses = np.append(train_losses, [[epoch], [train_loss]], axis=1)
-    train_errors = np.append(train_errors, [[epoch], [1 - accuracy]], axis=1)
     writer.add_scalar('Loss/train', train_loss, epoch)
-    writer.add_scalar('Error/train', 1 - accuracy, epoch)
 
     if epoch % 4 == 0:
         with torch.no_grad():
             test_loss = 0
-            accuracy = 0
             for data, labels in tqdm(test_loader, desc='Test', leave=False):
                 data = data.to(device)
                 labels = labels.to(device)
@@ -108,12 +103,9 @@ for epoch in tqdm(range(warmup_epochs + config.EPOCHS), desc='Epoch'):
                 loss = loss_function(predictions, labels)
 
                 test_loss += loss.item() / len(test_loader)
-                accuracy += labels.eq(torch.argmax(predictions, 1)).sum().item() / len(test_set)
                 del data, labels
         test_losses = np.append(test_losses, [[epoch], [test_loss]], axis=1)
-        test_errors = np.append(test_errors, [[epoch], [1 - accuracy]], axis=1)
         writer.add_scalar('Loss/test', test_loss, epoch)
-        writer.add_scalar('Error/test', 1 - accuracy, epoch)
 
         save_metrics()
         if epoch % 20 == 0:
