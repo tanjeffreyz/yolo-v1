@@ -37,16 +37,24 @@ class SumSquaredErrorLoss:
                + torch.sum(noobj_ij * self.lambda_noobj * confidence_losses)
 
 
-def load_classes():
+def load_class_dict():
     if os.path.exists(config.CLASSES_PATH):
         with open(config.CLASSES_PATH, 'r') as file:
             return json.load(file)
     new_dict = {}
-    save_classes(new_dict)
+    save_class_dict(new_dict)
     return new_dict
 
 
-def save_classes(obj):
+def load_class_array():
+    classes = load_class_dict()
+    result = [None for _ in range(len(classes))]
+    for c, i in classes.items():
+        result[i] = c
+    return result
+
+
+def save_class_dict(obj):
     folder = os.path.dirname(config.CLASSES_PATH)
     if not os.path.exists(folder):
         os.makedirs(folder)
@@ -84,7 +92,7 @@ def bbox_attr(data, i):
     return data[:, :, i:5*config.B:5]
 
 
-def plot_boxes(data, labels):
+def plot_boxes(data, labels, classes):
     """Plots bounding boxes on the given image."""
 
     grid_size_x = data.size(dim=2) / config.S
@@ -95,18 +103,30 @@ def plot_boxes(data, labels):
     for i in range(labels.size(dim=0)):
         for j in range(labels.size(dim=1)):
             for k in range(config.B):
-                bbox = labels[i, j, 5 * k:5 * (k + 1)]
-                bbox_center = (
-                    bbox[0] + j * grid_size_x - bbox[2] / 2,
-                    bbox[1] + i * grid_size_y - bbox[3] / 2
-                )
-                rect = patches.Rectangle(
-                    bbox_center,
-                    bbox[2],
-                    bbox[3],
-                    facecolor='none',
-                    linewidth=1,
-                    edgecolor='orange'
-                )
-                ax.add_patch(rect)
+                bbox = labels[i, j, 5*k:5*(k+1)]
+                confidence = bbox[4]
+                if confidence > 0.5:
+                    class_index = torch.argmax(labels[i, j, -config.C:]).item()
+                    width = bbox[2] * config.IMAGE_SIZE[0]
+                    height = bbox[3] * config.IMAGE_SIZE[1]
+                    bbox_tl = (
+                        (bbox[0] + j) * grid_size_x - width / 2,
+                        (bbox[1] + i) * grid_size_y - height / 2
+                    )
+                    rect = patches.Rectangle(
+                        bbox_tl,
+                        width,
+                        height,
+                        facecolor='none',
+                        linewidth=1,
+                        edgecolor='orange'
+                    )
+                    ax.add_patch(rect)
+                    ax.text(
+                        bbox_tl[0] + width / 2,
+                        bbox_tl[1] + height,
+                        classes[class_index],
+                        bbox=dict(facecolor='orange', edgecolor='none'),
+                        fontsize=6
+                    )
     plt.show()

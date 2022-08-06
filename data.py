@@ -15,10 +15,10 @@ class YoloPascalVocDataset(Dataset):
     def __init__(self, folder):
         assert folder in {'train', 'test'}
         target = os.path.join('data', folder)
-        self.classes = utils.load_classes()
+        self.classes = utils.load_class_dict()
         if not os.path.exists(target):
             self.preprocess(folder)
-            utils.save_classes(self.classes)
+            utils.save_class_dict(self.classes)
         self.files = glob.glob(os.path.join(target, '*'))
 
     def preprocess(self, folder):
@@ -92,5 +92,7 @@ class YoloPascalVocDataset(Dataset):
 
 
 if __name__ == '__main__':
-    YoloPascalVocDataset('train')
-    YoloPascalVocDataset('test')
+    classes = utils.load_class_array()
+    train_set = YoloPascalVocDataset('train')
+    for data, label in train_set:
+        utils.plot_boxes(data, label, classes)
