@@ -85,7 +85,6 @@ for epoch in tqdm(range(warmup_epochs + config.EPOCHS), desc='Epoch'):
         optimizer.step()
 
         train_loss += loss.item() / len(train_loader)
-        print(loss.item(), optimizer.param_groups[0]['lr'])
         del data, labels
     increasing_sched.step()       # Step schedulers once an epoch
     decreasing_sched.step()
