@@ -4,7 +4,7 @@ import os
 DATA_PATH = 'data'
 CLASSES_PATH = os.path.join(DATA_PATH, 'classes.json')
 
-BATCH_SIZE = 128
+BATCH_SIZE = 64
 EPOCHS = 135
 IMAGE_SIZE = (448, 448)
 

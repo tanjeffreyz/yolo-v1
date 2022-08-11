@@ -81,6 +81,7 @@ for epoch in tqdm(range(warmup_epochs + config.EPOCHS), desc='Epoch'):
         optimizer.zero_grad()
         predictions = model.forward(data)
         loss = loss_function(predictions, labels)
+        print(loss.item())
         loss.backward()
         optimizer.step()
 

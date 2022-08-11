@@ -62,6 +62,7 @@ class YOLOv1(nn.Module):
         layers += [
             nn.Flatten(),
             nn.Linear(config.S * config.S * 1024, 4096),            # Linear 1
+            nn.Dropout(),
             nn.LeakyReLU(negative_slope=0.1),
             # Probe('linear1', forward=probe_dist),
             nn.Linear(4096, config.S * config.S * self.depth),       # Linear 2
