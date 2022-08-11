@@ -28,9 +28,9 @@ class TestLossFunction(unittest.TestCase):
         self.assertEqual(0, result.item())
 
     def test_positives(self):
-        test = torch.rand(TestLossFunction.SHAPE) + 1.0
+        test = torch.rand(TestLossFunction.SHAPE)
         loss_func = SumSquaredErrorLoss()
-        result = loss_func(test, test)
+        result = loss_func(test + 1.0, test + 1.0)
         self.assertEqual(tuple(result.size()), ())
         self.assertFalse(torch.isnan(result).item())
         self.assertTrue(result.item() >= 0)
@@ -38,7 +38,7 @@ class TestLossFunction(unittest.TestCase):
     def test_negatives(self):
         test = torch.rand(TestLossFunction.SHAPE) - 1.0
         loss_func = SumSquaredErrorLoss()
-        result = loss_func(test, test)
+        result = loss_func(test - 1.0, test + 1.0)
         self.assertEqual(tuple(result.size()), ())
         self.assertFalse(torch.isnan(result).item())
         self.assertTrue(result.item() >= 0)
