@@ -73,7 +73,7 @@ for epoch in tqdm(range(config.WARMUP_EPOCHS + config.EPOCHS), desc='Epoch'):
 
         optimizer.zero_grad()
         predictions = model.forward(data)
-        loss = loss_function(predictions, labels) / config.SUBDIVISIONS       # Simulates loss from subdivisions
+        loss = loss_function(predictions, labels)
         loss.backward()
         optimizer.step()
 
@@ -95,7 +95,7 @@ for epoch in tqdm(range(config.WARMUP_EPOCHS + config.EPOCHS), desc='Epoch'):
                 labels = labels.to(device)
 
                 predictions = model.forward(data)
-                loss = loss_function(predictions, labels) / config.SUBDIVISIONS
+                loss = loss_function(predictions, labels)
 
                 test_loss += loss.item() / len(test_loader)
                 del data, labels
