@@ -73,13 +73,16 @@ for epoch in tqdm(range(config.WARMUP_EPOCHS + config.EPOCHS), desc='Epoch'):
 
         optimizer.zero_grad()
         predictions = model.forward(data)
-        loss = loss_function(predictions, labels)
+        loss = loss_function(predictions, labels) / config.SUBDIVISIONS       # Simulates loss from subdivisions
         loss.backward()
         optimizer.step()
 
         train_loss += loss.item() / len(train_loader)
         del data, labels
-    scheduler.step()       # Step scheduler once an epoch
+
+    # Step and graph scheduler once an epoch
+    writer.add_scalar('Learning Rate', scheduler.get_last_lr()[0], epoch)
+    scheduler.step()
 
     train_losses = np.append(train_losses, [[epoch], [train_loss]], axis=1)
     writer.add_scalar('Loss/train', train_loss, epoch)
@@ -92,7 +95,7 @@ for epoch in tqdm(range(config.WARMUP_EPOCHS + config.EPOCHS), desc='Epoch'):
                 labels = labels.to(device)
 
                 predictions = model.forward(data)
-                loss = loss_function(predictions, labels)
+                loss = loss_function(predictions, labels) / config.SUBDIVISIONS
 
                 test_loss += loss.item() / len(test_loader)
                 del data, labels

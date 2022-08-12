@@ -111,7 +111,7 @@ def bbox_attr(data, i):
     return data[:, :, i:5*config.B:5]
 
 
-def plot_boxes(data, labels, classes):
+def plot_boxes(data, labels, classes, threshold=0.5):
     """Plots bounding boxes on the given image."""
 
     grid_size_x = data.size(dim=2) / config.S
@@ -124,7 +124,7 @@ def plot_boxes(data, labels, classes):
             for k in range(config.B):
                 bbox = labels[i, j, 5*k:5*(k+1)]
                 confidence = bbox[4]
-                if confidence > 0.5:
+                if confidence > threshold:
                     class_index = torch.argmax(labels[i, j, -config.C:]).item()
                     width = bbox[2] * config.IMAGE_SIZE[0]
                     height = bbox[3] * config.IMAGE_SIZE[1]
