@@ -6,7 +6,7 @@ from models import YOLOv1
 from torch.utils.data import DataLoader
 
 
-WEIGHTS_PATH = 'models/yolo_v1/08_11_2022/18_11_08/weights/final'
+WEIGHTS_PATH = 'models/yolo_v1/08_12_2022/09_49_42/weights/final'
 
 
 def show_test_images():
@@ -20,7 +20,7 @@ def show_test_images():
             print(image.size(), labels.size())
             predictions = model.forward(image)
             for i in range(image.size(dim=0)):
-                utils.plot_boxes(image[i, :, :], predictions[i, :, :], classes, threshold=0.1)
+                utils.plot_boxes(image[i, :, :, :], predictions[i, :, :, :], classes, threshold=0)
 
 
 if __name__ == '__main__':
