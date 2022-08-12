@@ -7,7 +7,7 @@ images:
 -->
 
 
-<h1 align="center">YOLO</h1>
+<h1 align="center">YOLOv1</h1>
            
 PyTorch implementation of the YOLO architecture presented in "You Only Look Once: Unified, Real-Time Object Detection" by Joseph Redmon, Santosh Divvala, Ross Girshick, Ali Farhadi
 
