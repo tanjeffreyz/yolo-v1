@@ -6,6 +6,7 @@ CLASSES_PATH = os.path.join(DATA_PATH, 'classes.json')
 
 BATCH_SIZE = 64
 EPOCHS = 135
+WARMUP_EPOCHS = 10
 IMAGE_SIZE = (448, 448)
 
 S = 7       # Divide each image into a SxS grid

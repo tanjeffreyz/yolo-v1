@@ -40,6 +40,22 @@ class SumSquaredErrorLoss:
                + torch.sum(noobj_ij * self.lambda_noobj * confidence_losses)
 
 
+def scheduler_lambda(epoch):
+    warmup_step = config.WARMUP_EPOCHS / 3
+    if epoch < warmup_step:
+        return 1
+    elif epoch < 2 * warmup_step:
+        return 2.5
+    elif epoch < config.WARMUP_EPOCHS:
+        return 5
+    elif epoch < config.WARMUP_EPOCHS + 75:
+        return 10
+    elif epoch < config.WARMUP_EPOCHS + 105:
+        return 1
+    else:
+        return 0.1
+
+
 def load_class_dict():
     if os.path.exists(config.CLASSES_PATH):
         with open(config.CLASSES_PATH, 'r') as file:

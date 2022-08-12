@@ -20,21 +20,14 @@ loss_function = utils.SumSquaredErrorLoss()
 optimizer = torch.optim.SGD(
     model.parameters(),
     lr=1E-3,
-    momentum=0.9,
-    weight_decay=0.005
+    momentum=0.1,
+    weight_decay=0.0005
 )
 
-# Learning rate schedulers
-warmup_epochs = 5
-increasing_sched = torch.optim.lr_scheduler.MultiStepLR(
+# Learning rate scheduler
+scheduler = torch.optim.lr_scheduler.LambdaLR(
     optimizer,
-    milestones=(warmup_epochs,),
-    gamma=10
-)
-decreasing_sched = torch.optim.lr_scheduler.MultiStepLR(
-    optimizer,
-    milestones=(warmup_epochs + 75, warmup_epochs + 105),
-    gamma=0.1
+    lr_lambda=utils.scheduler_lambda
 )
 
 # Load the dataset
@@ -72,7 +65,7 @@ def save_metrics():
 #####################
 #       Train       #
 #####################
-for epoch in tqdm(range(warmup_epochs + config.EPOCHS), desc='Epoch'):
+for epoch in tqdm(range(config.WARMUP_EPOCHS + config.EPOCHS), desc='Epoch'):
     train_loss = 0
     for data, labels in tqdm(train_loader, desc='Train', leave=False):
         data = data.to(device)
@@ -81,14 +74,12 @@ for epoch in tqdm(range(warmup_epochs + config.EPOCHS), desc='Epoch'):
         optimizer.zero_grad()
         predictions = model.forward(data)
         loss = loss_function(predictions, labels)
-        print(loss.item())
         loss.backward()
         optimizer.step()
 
         train_loss += loss.item() / len(train_loader)
         del data, labels
-    increasing_sched.step()       # Step schedulers once an epoch
-    decreasing_sched.step()
+    scheduler.step()       # Step scheduler once an epoch
 
     train_losses = np.append(train_losses, [[epoch], [train_loss]], axis=1)
     writer.add_scalar('Loss/train', train_loss, epoch)
@@ -107,10 +98,7 @@ for epoch in tqdm(range(warmup_epochs + config.EPOCHS), desc='Epoch'):
                 del data, labels
         test_losses = np.append(test_losses, [[epoch], [test_loss]], axis=1)
         writer.add_scalar('Loss/test', test_loss, epoch)
-
         save_metrics()
-        if epoch % 20 == 0:
-            torch.save(model.state_dict(), os.path.join(weight_dir, f'cp_{epoch}'))
 
 save_metrics()
 torch.save(model.state_dict(), os.path.join(weight_dir, 'final'))
