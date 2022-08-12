@@ -11,12 +11,12 @@ class YOLOv1(nn.Module):
         layers = [
             # Probe(0, forward=lambda x: print('#' * 5 + ' Start ' + '#' * 5)),
             nn.Conv2d(3, 64, kernel_size=7, stride=2, padding=3),                   # Conv 1
-            nn.ReLU(),
+            nn.LeakyReLU(negative_slope=0.1),
             # Probe('conv1', forward=probe_dist),
             nn.MaxPool2d(kernel_size=2, stride=2),
 
             nn.Conv2d(64, 192, kernel_size=3, padding=1),                           # Conv 2
-            nn.ReLU(),
+            nn.LeakyReLU(negative_slope=0.1),
             # Probe('conv2', forward=probe_dist),
             nn.MaxPool2d(kernel_size=2, stride=2),
 
@@ -24,7 +24,7 @@ class YOLOv1(nn.Module):
             nn.Conv2d(128, 256, kernel_size=3, padding=1),
             nn.Conv2d(256, 256, kernel_size=1),
             nn.Conv2d(256, 512, kernel_size=3, padding=1),
-            nn.ReLU(),
+            nn.LeakyReLU(negative_slope=0.1),
             # Probe('conv3', forward=probe_dist),
             nn.MaxPool2d(kernel_size=2, stride=2)
         ]
@@ -37,7 +37,7 @@ class YOLOv1(nn.Module):
         layers += [
             nn.Conv2d(512, 512, kernel_size=1),
             nn.Conv2d(512, 1024, kernel_size=3, padding=1),
-            nn.ReLU(),
+            nn.LeakyReLU(negative_slope=0.1),
             # Probe('conv4', forward=probe_dist),
             nn.MaxPool2d(kernel_size=2, stride=2)
         ]
@@ -50,20 +50,20 @@ class YOLOv1(nn.Module):
         layers += [
             nn.Conv2d(1024, 1024, kernel_size=3, padding=1),
             nn.Conv2d(1024, 1024, kernel_size=3, stride=2, padding=1),
-            nn.ReLU(),
+            nn.LeakyReLU(negative_slope=0.1),
             # Probe('conv5', forward=probe_dist),
         ]
 
         for _ in range(2):                                                          # Conv 6
             layers.append(nn.Conv2d(1024, 1024, kernel_size=3, padding=1))
-        layers.append(nn.ReLU())
+        layers.append(nn.LeakyReLU(negative_slope=0.1))
         # layers.append(Probe('conv6', forward=probe_dist))
 
         layers += [
             nn.Flatten(),
             nn.Linear(config.S * config.S * 1024, 4096),                            # Linear 1
             nn.Dropout(),
-            nn.ReLU(),
+            nn.LeakyReLU(negative_slope=0.1),
             # Probe('linear1', forward=probe_dist),
             nn.Linear(4096, config.S * config.S * self.depth),                      # Linear 2
             # Probe('linear2', forward=probe_dist),
