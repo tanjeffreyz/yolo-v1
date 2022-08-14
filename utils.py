@@ -2,41 +2,57 @@ import torch
 import json
 import os
 import config
+import torch.nn as nn
+import torch.nn.functional as F
 import matplotlib.patches as patches
 from matplotlib import pyplot as plt
 
 
-class SumSquaredErrorLoss:
+#############################
+#       Loss Function       #
+#############################
+class SumSquaredErrorLoss(nn.Module):
     def __init__(self):
-        self.lambda_coord = 5
-        self.lambda_noobj = 0.5
+        super().__init__()
+        self.l_coord = 5
+        self.l_noobj = 0.5
 
-    def __call__(self, p, a):
-        obj_ij = bbox_attr(a, 4)            # Indicator variable, 1 if grid I, bbox J contains object
-        noobj_ij = 1 - obj_ij               # Opposite, 1's if grid I, bbox J contains NO object
-        obj_i = obj_ij[:, :, 0:1]           # 1 if grid I has any object at all
+    def forward(self, p, a):
+        obj_ij = bbox_attr(a, 4) > 0        # Indicator variable, 1 if grid I, bbox J contains object
+        noobj_ij = ~obj_ij                  # Opposite, 1's if grid I, bbox J contains NO object
+        obj_i = obj_ij[:, :, :, 0:1]        # 1 if grid I has any object at all
 
         # XY position losses
         x_pos = bbox_attr(p, 0) - bbox_attr(a, 0)
         y_pos = bbox_attr(p, 1) - bbox_attr(a, 1)
         pos_losses = x_pos ** 2 + y_pos ** 2
+        # print('pos_losses', pos_losses.size())
 
         # Bbox dimension losses (prevent negative numbers inside sqrt for predictions)
         width = torch.sqrt(torch.sqrt(bbox_attr(p, 2) ** 2)) - torch.sqrt(torch.sqrt(bbox_attr(a, 2) ** 2))
         height = torch.sqrt(torch.sqrt(bbox_attr(p, 3) ** 2)) - torch.sqrt(torch.sqrt(bbox_attr(a, 3) ** 2))
         dim_losses = width ** 2 + height ** 2
+        # print('dim_losses', dim_losses.size())
 
         # Confidence losses
-        confidence_losses = (bbox_attr(p, 4) - obj_ij) ** 2
+        confidence_losses = (bbox_attr(p, 4) - torch.ones(obj_ij.size()).to('cuda')) ** 2
+        # print('confidence_losses', confidence_losses.size())
 
         # Classification losses
-        class_losses = (p[:, :, 5*config.B:] - a[:, :, 5*config.B:]) ** 2
+        class_losses = (p[:, :, :, 5*config.B:] - a[:, :, :, 5*config.B:]) ** 2
+        # print('class_losses', class_losses.size())
 
-        return torch.sum(obj_ij * (self.lambda_coord * (pos_losses + dim_losses) + confidence_losses)) \
-               + torch.sum(obj_i * class_losses) \
-               + torch.sum(noobj_ij * self.lambda_noobj * confidence_losses)
+        return torch.sum(self.l_coord * (pos_losses[obj_ij] + dim_losses[obj_ij]) + confidence_losses[obj_ij]) \
+               + torch.sum(class_losses[obj_i.expand(class_losses.size())]) \
+               + torch.sum(self.l_noobj * confidence_losses[noobj_ij])
+
+    def iou(self, a, b):
+        pass
 
 
+#################################
+#       Helper Functions        #
+#################################
 def scheduler_lambda(epoch):
     warmup_step = config.WARMUP_EPOCHS / 3
     if epoch < warmup_step:
@@ -105,7 +121,7 @@ def get_bounding_boxes(label):
 def bbox_attr(data, i):
     """Returns the Ith attribute of each bounding box in data."""
 
-    return data[:, :, i:5*config.B:5]
+    return data[:, :, :, i:5*config.B:5]
 
 
 def plot_boxes(data, labels, classes, threshold=0.5):
@@ -120,14 +136,14 @@ def plot_boxes(data, labels, classes, threshold=0.5):
         for j in range(labels.size(dim=1)):
             for k in range(config.B):
                 bbox = labels[i, j, 5*k:5*(k+1)]
-                confidence = bbox[4]
+                confidence = bbox[4].item()
                 if confidence > threshold:
                     class_index = torch.argmax(labels[i, j, -config.C:]).item()
                     width = bbox[2] * config.IMAGE_SIZE[0]
                     height = bbox[3] * config.IMAGE_SIZE[1]
                     bbox_tl = (
-                        (bbox[0] + j) * grid_size_x - width / 2,
-                        (bbox[1] + i) * grid_size_y - height / 2
+                        bbox[0] * config.IMAGE_SIZE[0] + j * grid_size_x - width / 2,
+                        bbox[1] * config.IMAGE_SIZE[1] + i * grid_size_y - height / 2
                     )
                     rect = patches.Rectangle(
                         bbox_tl,
@@ -140,8 +156,8 @@ def plot_boxes(data, labels, classes, threshold=0.5):
                     ax.add_patch(rect)
                     ax.text(
                         bbox_tl[0] + width / 2,
-                        bbox_tl[1] + height,
-                        classes[class_index],
+                        bbox_tl[1],
+                        f'{classes[class_index]} {round(confidence * 100, 1)}%',
                         bbox=dict(facecolor='orange', edgecolor='none'),
                         fontsize=6
                     )
