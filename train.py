@@ -80,7 +80,7 @@ for epoch in tqdm(range(config.WARMUP_EPOCHS + config.EPOCHS), desc='Epoch'):
 
         optimizer.zero_grad()
         predictions = model.forward(data)
-        loss = loss_function(predictions, labels)
+        loss = loss_function(predictions, labels) / config.BATCH_SIZE
         loss.backward()
         optimizer.step()
 
@@ -102,7 +102,7 @@ for epoch in tqdm(range(config.WARMUP_EPOCHS + config.EPOCHS), desc='Epoch'):
                 labels = labels.to(device)
 
                 predictions = model.forward(data)
-                loss = loss_function(predictions, labels)
+                loss = loss_function(predictions, labels) / config.BATCH_SIZE
 
                 test_loss += loss.item() / len(test_loader)
                 del data, labels
