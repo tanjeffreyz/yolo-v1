@@ -94,5 +94,8 @@ class YoloPascalVocDataset(Dataset):
 if __name__ == '__main__':
     classes = utils.load_class_array()
     train_set = YoloPascalVocDataset('train')
+    num_negatives = 0
     for data, label in train_set:
-        utils.plot_boxes(data, label, classes)
+        num_negatives += torch.sum(label < 0).item()
+        # utils.plot_boxes(data, label, classes)
+    print(num_negatives)

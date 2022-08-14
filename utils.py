@@ -21,12 +21,9 @@ class SumSquaredErrorLoss:
         y_pos = bbox_attr(p, 1) - bbox_attr(a, 1)
         pos_losses = x_pos ** 2 + y_pos ** 2
 
-        # Bbox dimension losses
-        p_width = bbox_attr(p, 2)           # Prevent negative numbers inside sqrt for predictions
-        p_height = bbox_attr(p, 3)          # Ground truth width/height are guaranteed to be positive
-        zeros = torch.zeros_like(p_width)
-        width = torch.sqrt(torch.maximum(p_width, zeros)) - torch.sqrt(bbox_attr(a, 2))
-        height = torch.sqrt(torch.maximum(p_height, zeros)) - torch.sqrt(bbox_attr(a, 3))
+        # Bbox dimension losses (prevent negative numbers inside sqrt for predictions)
+        width = torch.sqrt(torch.sqrt(bbox_attr(p, 2) ** 2)) - torch.sqrt(torch.sqrt(bbox_attr(a, 2) ** 2))
+        height = torch.sqrt(torch.sqrt(bbox_attr(p, 3) ** 2)) - torch.sqrt(torch.sqrt(bbox_attr(a, 3) ** 2))
         dim_losses = width ** 2 + height ** 2
 
         # Confidence losses
