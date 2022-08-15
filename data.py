@@ -93,8 +93,8 @@ def preprocess(folder):
 
 if __name__ == '__main__':
     # Preprocess data
-    preprocess('train')
-    preprocess('test')
+    # preprocess('train')
+    # preprocess('test')
 
     # Display data
     obj_classes = utils.load_class_array()

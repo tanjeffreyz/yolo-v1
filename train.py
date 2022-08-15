@@ -12,6 +12,7 @@ from models import YOLOv1
 
 
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+torch.autograd.set_detect_anomaly(True)         # Check for nan loss
 writer = SummaryWriter()
 now = datetime.now()
 
@@ -73,8 +74,10 @@ for epoch in tqdm(range(config.WARMUP_EPOCHS + config.EPOCHS), desc='Epoch'):
 
         optimizer.zero_grad()
         predictions = model.forward(data)
+        # print('\n############################')
+        # print('predictions', torch.min(predictions).item(), torch.max(predictions).item())
         loss = loss_function(predictions, labels)
-        print(loss.item())
+        # print('TOTAL LOSS', loss.item())
         loss.backward()
         optimizer.step()
 

@@ -3,7 +3,6 @@ import json
 import os
 import config
 import torch.nn as nn
-import torch.nn.functional as F
 import matplotlib.patches as patches
 from matplotlib import pyplot as plt
 
@@ -31,31 +30,43 @@ class SumSquaredErrorLoss(nn.Module):
         )
         noobj_ij = ~obj_ij                      # Opposite, 1's if grid I, bbox J NOT responsible for prediction
         obj_i = bbox_mask[:, :, :, 0:1]         # 1 if grid I has any object at all
-        print('obj_ij', obj_ij.size())
+        # print('obj_ij', obj_ij.size())
         # print('obj_ij', obj_i.size())
 
         # XY position losses
         x_pos = bbox_attr(p, 0) - bbox_attr(a, 0)
         y_pos = bbox_attr(p, 1) - bbox_attr(a, 1)
         pos_losses = x_pos ** 2 + y_pos ** 2
+        # print('pos_losses', torch.min(pos_losses).item(), torch.max(pos_losses).item())
         # print('pos_losses', pos_losses.size())
         # print(torch.sum(torch.isnan(pos_losses)).item())
 
         # Bbox dimension losses (prevent negative numbers inside sqrt for predictions)
-        width = torch.sqrt(torch.sqrt(bbox_attr(p, 2) ** 2)) - torch.sqrt(torch.sqrt(bbox_attr(a, 2) ** 2))
-        height = torch.sqrt(torch.sqrt(bbox_attr(p, 3) ** 2)) - torch.sqrt(torch.sqrt(bbox_attr(a, 3) ** 2))
+        p_width = bbox_attr(p, 2)
+        a_width = bbox_attr(a, 2)
+        # print('width', torch.sum((p_width > 0.0) * p_width <= 0).item(), torch.sum(a_width <= 0).item())
+        width = torch.sqrt(torch.clamp(p_width, min=config.EPSILON)) \
+                - torch.sqrt(torch.clamp(a_width, min=config.EPSILON))
+        p_height = bbox_attr(p, 3)
+        a_height = bbox_attr(a, 3)
+        # print('height', torch.sum((p_height > 0.0) * p_height <= 0).item(), torch.sum(a_height <= 0).item())
+        height = torch.sqrt(torch.clamp(p_height, min=config.EPSILON)) \
+                 - torch.sqrt(torch.clamp(a_height, min=config.EPSILON))
         dim_losses = width ** 2 + height ** 2
+        # print('dim_losses', torch.min(dim_losses).item(), torch.max(dim_losses).item())
         # print(torch.sum(torch.isnan(dim_losses)).item())
         # print('dim_losses', dim_losses.size())
 
         # Confidence losses (target confidence is IOU)
         confidence_losses = (bbox_attr(p, 4) - max_iou) ** 2
-        # print('confidence_losses', confidence_losses.size())
+        # print('max_iou', torch.min(max_iou).item(), torch.max(max_iou).item())
+        # print('confidence_losses', torch.min(confidence_losses).item(), torch.max(confidence_losses).item())
         # print(confidence_losses[obj_ij].size(), confidence_losses[noobj_ij].size())
         # print(torch.sum(torch.isnan(confidence_losses)).item())
 
         # Classification losses
         class_losses = (p[:, :, :, 5*config.B:] - a[:, :, :, 5*config.B:]) ** 2
+        # print('class_losses', torch.min(class_losses).item(), torch.max(class_losses).item())
         # print('class_losses', class_losses.size())
         # print(torch.sum(torch.isnan(class_losses)).item())
 
@@ -70,32 +81,71 @@ class SumSquaredErrorLoss(nn.Module):
 #       Helper Functions        #
 #################################
 def get_iou(p, a):
+    # print('################################')
     p_tl, p_br = bbox_to_coords(p)          # (batch, S, S, B, 2)
+    # print('p_tl', p_tl.size())
+    # print('p_tl > p_br', torch.sum(p_tl > p_br).item())
     a_tl, a_br = bbox_to_coords(a)
+    # print('a_tl > a_br', torch.sum(a_tl > a_br).item())
 
     # Largest top-left corner and smallest bottom-right corner give the intersection
     coords_join_size = (-1, -1, -1, config.B, config.B, 2)
     tl = torch.max(
-        p_tl.unsqueeze(-1).expand(coords_join_size),        # (batch, S, S, B, 1, 2) -> (batch, S, S, B, B, 2)
-        a_tl.unsqueeze(-2).expand(coords_join_size)         # (batch, S, S, 1, B, 2) -> (batch, S, S, B, B, 2)
+        p_tl.unsqueeze(4).expand(coords_join_size),         # (batch, S, S, B, 1, 2) -> (batch, S, S, B, B, 2)
+        a_tl.unsqueeze(3).expand(coords_join_size)          # (batch, S, S, 1, B, 2) -> (batch, S, S, B, B, 2)
     )
+    # print('p_tl.unsqueeze(4)', p_tl.unsqueeze(4).size())
+    # print('tl', tl.size())
+    # print('tl', torch.min(tl).item(), torch.max(tl).item())
+    # print('a_tl.unsqueeze(3)', a_tl.unsqueeze(3).size())
     br = torch.min(
-        p_br.unsqueeze(-1).expand(coords_join_size),
-        a_br.unsqueeze(-2).expand(coords_join_size)
+        p_br.unsqueeze(4).expand(coords_join_size),
+        a_br.unsqueeze(3).expand(coords_join_size)
     )
+    # print('br', torch.min(br).item(), torch.max(br).item())
     intersection_sides = br - tl
     intersection = intersection_sides[:, :, :, :, :, 0] \
-                   * intersection_sides[:, :, :, :, :, 1]   # (batch, S, S, B, B)
+                   * intersection_sides[:, :, :, :, :, 1]       # (batch, S, S, B, B)
+    # print('intersection', intersection.size())
 
-    p_area = bbox_attr(p, 2) * bbox_attr(p, 3)              # (batch, S, S, B)
-    p_area = p_area.unsqueeze(-1).expand_as(intersection)   # (batch, S, S, B, B)
+    # Clamp intersection to be non-negative
+    intersection = torch.clamp(intersection, min=0.0)
+
+    p_sides = p_br - p_tl
+    # print('p_sides size', p_sides.size())
+    # p_area = p_sides[:, :, :, :, 0] * p_sides[:, :, :, :, 1]    # (batch, S, S, B)
+    p_area = bbox_attr(p, 2) * bbox_attr(p, 3)
+    # print('p_area size', p_area.size())
+    # print('p_area', torch.min(p_area).item(), torch.max(p_area).item())
+    # print('p_area.unsqueeze(4)', p_area.unsqueeze(4).size())
+    p_area = p_area.unsqueeze(4).expand_as(intersection)        # (batch, S, S, B, 1) -> (batch, S, S, B, B)
+
+    a_sides = a_br - a_tl
+    # print('a_sides size', a_sides.size())
+    # a_area = a_sides[:, :, :, :, 0] * a_sides[:, :, :, :, 1]    # (batch, S, S, B)
     a_area = bbox_attr(a, 2) * bbox_attr(a, 3)
-    a_area = a_area.unsqueeze(-2).expand_as(intersection)
-    union = p_area + a_area - intersection
+    # print('a_area size', a_area.size())
+    # print('a_area', torch.min(a_area).item(), torch.max(a_area).item())
+    # print('a_area.unsqueeze(3)', a_area.unsqueeze(3).size())
+    a_area = a_area.unsqueeze(3).expand_as(intersection)        # (batch, S, S, 1, B) -> (batch, S, S, B, B)
 
-    # Clamp IOU to be non-negative and catch division-by-zero
-    intersection[intersection < 0] = 0
-    union[union == 0] = 1E6
+    union = p_area + a_area - intersection
+    # print('union < 0', torch.sum(union < 0).item())
+
+    # Catch division-by-zero and negative unions
+    invalid_unions = (intersection > union)
+    union[invalid_unions] = config.EPSILON
+    intersection[invalid_unions] = 0.0
+
+    # print('intersection > union', torch.sum(intersection > union).item())
+    # print('intersection <= union', torch.sum(intersection <= union).item())
+    #
+    # print('intersection', torch.min(intersection).item(), torch.max(intersection).item())
+    # print('union', torch.min(union).item(), torch.max(union).item())
+    #
+    # print('intersection / union', torch.min(intersection / union).item(), torch.max(intersection / union).item())
+    # print('iou size', (intersection / union).size())
+    # print(bbox_attr(a, 1) is bbox_attr(a, 1))
     return intersection / union
 
 
