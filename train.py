@@ -2,7 +2,6 @@ import torch
 import os
 import config
 import utils
-import atexit
 import numpy as np
 from tqdm import tqdm
 from datetime import datetime
@@ -11,12 +10,6 @@ from torch.utils.data import DataLoader
 from data import YoloPascalVocDataset
 from models import YOLOv1
 
-
-# Save model on exit
-def on_exit():
-    save_metrics()
-    torch.save(model.state_dict(), os.path.join(weight_dir, 'final'))
-atexit.register(on_exit)
 
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 writer = SummaryWriter()
@@ -109,3 +102,5 @@ for epoch in tqdm(range(config.WARMUP_EPOCHS + config.EPOCHS), desc='Epoch'):
         test_losses = np.append(test_losses, [[epoch], [test_loss]], axis=1)
         writer.add_scalar('Loss/test', test_loss, epoch)
         save_metrics()
+save_metrics()
+torch.save(model.state_dict(), os.path.join(weight_dir, 'final'))
