@@ -18,6 +18,7 @@ class SumSquaredErrorLoss(nn.Module):
         self.l_noobj = 0.5
 
     def forward(self, p, a):
+        # print('###################')
         obj_ij = bbox_attr(a, 4) > 0        # Indicator variable, 1 if grid I, bbox J contains object
         noobj_ij = ~obj_ij                  # Opposite, 1's if grid I, bbox J contains NO object
         obj_i = obj_ij[:, :, :, 0:1]        # 1 if grid I has any object at all
@@ -27,24 +28,29 @@ class SumSquaredErrorLoss(nn.Module):
         y_pos = bbox_attr(p, 1) - bbox_attr(a, 1)
         pos_losses = x_pos ** 2 + y_pos ** 2
         # print('pos_losses', pos_losses.size())
+        # print(torch.sum(torch.isnan(pos_losses)).item())
 
         # Bbox dimension losses (prevent negative numbers inside sqrt for predictions)
         width = torch.sqrt(torch.sqrt(bbox_attr(p, 2) ** 2)) - torch.sqrt(torch.sqrt(bbox_attr(a, 2) ** 2))
         height = torch.sqrt(torch.sqrt(bbox_attr(p, 3) ** 2)) - torch.sqrt(torch.sqrt(bbox_attr(a, 3) ** 2))
         dim_losses = width ** 2 + height ** 2
+        # print(torch.sum(torch.isnan(dim_losses)).item())
         # print('dim_losses', dim_losses.size())
 
         # Confidence losses
         confidence_losses = (bbox_attr(p, 4) - torch.ones(obj_ij.size()).to('cuda')) ** 2
         # print('confidence_losses', confidence_losses.size())
+        # print(torch.sum(torch.isnan(confidence_losses)).item())
 
         # Classification losses
         class_losses = (p[:, :, :, 5*config.B:] - a[:, :, :, 5*config.B:]) ** 2
         # print('class_losses', class_losses.size())
+        # print(torch.sum(torch.isnan(class_losses)).item())
 
-        return torch.sum(self.l_coord * (pos_losses[obj_ij] + dim_losses[obj_ij]) + confidence_losses[obj_ij]) \
-               + torch.sum(class_losses[obj_i.expand(class_losses.size())]) \
-               + torch.sum(self.l_noobj * confidence_losses[noobj_ij])
+        total = torch.sum(self.l_coord * (pos_losses[obj_ij] + dim_losses[obj_ij]) + confidence_losses[obj_ij]) \
+                + torch.sum(class_losses[obj_i.expand(class_losses.size())]) \
+                + torch.sum(self.l_noobj * confidence_losses[noobj_ij])
+        return total / config.BATCH_SIZE
 
     def iou(self, a, b):
         pass

@@ -18,7 +18,7 @@ class TestModel(unittest.TestCase):
 
 
 class TestLossFunction(unittest.TestCase):
-    SHAPE = (config.S, config.S, 5 * config.B + config.C)
+    SHAPE = (config.BATCH_SIZE, config.S, config.S, 5 * config.B + config.C)
 
     def test_zeros(self):
         test = torch.zeros(TestLossFunction.SHAPE)
@@ -45,10 +45,10 @@ class TestLossFunction(unittest.TestCase):
 
     def test_single_bbox(self):
         truth = torch.zeros(TestLossFunction.SHAPE)
-        truth[0, 0, 4] = 1.0        # Bbox confidence
-        truth[0, 0, -1] = 1.0       # Class
+        truth[0, 0, 0, 4] = 1.0        # Bbox confidence
+        truth[0, 0, 0, -1] = 1.0       # Class
         pred = torch.zeros(TestLossFunction.SHAPE)
-        pred[0, 0, 0:5] = torch.ones(5)
+        pred[0, 0, 0, 0:5] = torch.ones(5)
         loss_func = SumSquaredErrorLoss()
         result = loss_func(pred, truth)
         self.assertEqual(tuple(result.size()), ())
@@ -56,11 +56,11 @@ class TestLossFunction(unittest.TestCase):
 
     def test_double_bbox(self):
         truth = torch.zeros(TestLossFunction.SHAPE)
-        truth[0, 0, 4] = 1.0        # Bbox confidences
-        truth[0, 0, 9] = 1.0
-        truth[0, 0, -1] = 1.0       # Class
+        truth[0, 0, 0, 4] = 1.0        # Bbox confidences
+        truth[0, 0, 0, 9] = 1.0
+        truth[0, 0, 0, -1] = 1.0       # Class
         pred = torch.zeros(TestLossFunction.SHAPE)
-        pred[0, 0, 0:10] = torch.ones(10)
+        pred[0, 0, 0, 0:10] = torch.ones(10)
         loss_func = SumSquaredErrorLoss()
         result = loss_func(pred, truth)
         self.assertEqual(tuple(result.size()), ())

@@ -14,30 +14,35 @@ class YoloPascalVocDataset(Dataset):
 
     def __init__(self, folder):
         assert folder in {'train', 'test'}
-        target = os.path.join('data', folder)
-        self.classes = utils.load_class_dict()
+        self.files = glob.glob(os.path.join('data', folder, '*'))
+
+    def __getitem__(self, i):
+        return torch.load(self.files[i])
+
+    def __len__(self):
+        return len(self.files)
+
+
+def preprocess(folder):
+    classes = utils.load_class_dict()
+    dataset = VOCDetection(
+        root=config.DATA_PATH,
+        year='2007',
+        image_set=('train' if folder == 'train' else 'val'),
+        download=True,
+        transform=T.Compose([
+            T.ToTensor(),
+            T.Resize(config.IMAGE_SIZE)
+        ])
+    )
+
+    output_dir = os.path.join(config.DATA_PATH, folder)
+    if not os.path.exists(output_dir):
+        os.makedirs(output_dir)
+
+    for i, data_pair in enumerate(tqdm(dataset, desc=f'Preprocessing {folder}')):
+        target = os.path.join(output_dir, str(i))
         if not os.path.exists(target):
-            self.preprocess(folder)
-            utils.save_class_dict(self.classes)
-        self.files = glob.glob(os.path.join(target, '*'))
-
-    def preprocess(self, folder):
-        dataset = VOCDetection(
-            root=config.DATA_PATH,
-            year='2007',
-            image_set=('train' if folder == 'train' else 'val'),
-            download=True,
-            transform=T.Compose([
-                T.ToTensor(),
-                T.Resize(config.IMAGE_SIZE)
-            ])
-        )
-
-        output_dir = os.path.join(config.DATA_PATH, folder)
-        if not os.path.exists(output_dir):
-            os.makedirs(output_dir)
-
-        for i, data_pair in enumerate(tqdm(dataset, desc=f'Preprocessing {folder}')):
             data, label = data_pair
             grid_size_x = data.size(dim=2) / config.S       # Images in PyTorch have size (channels, height, width)
             grid_size_y = data.size(dim=1) / config.S
@@ -48,10 +53,10 @@ class YoloPascalVocDataset(Dataset):
             ground_truth = torch.zeros((config.S, config.S, depth))
             for j, bbox_pair in enumerate(utils.get_bounding_boxes(label)):
                 name, coords = bbox_pair
-                if name not in self.classes:
-                    self.classes[name] = YoloPascalVocDataset.index
+                if name not in classes:
+                    classes[name] = YoloPascalVocDataset.index
                     YoloPascalVocDataset.index += 1
-                class_index = self.classes[name]
+                class_index = classes[name]
                 x_min, x_max, y_min, y_max = coords
                 mid_x = (x_max + x_min) / 2
                 mid_y = (y_max + y_min) / 2
@@ -82,20 +87,20 @@ class YoloPascalVocDataset(Dataset):
                 ground_truth[row, col, -config.C:] = one_hot
 
             # Save preprocessed data
-            torch.save((data, ground_truth), os.path.join(output_dir, str(i)))
-
-    def __getitem__(self, i):
-        return torch.load(self.files[i])
-
-    def __len__(self):
-        return len(self.files)
+            torch.save((data, ground_truth), target)
+    utils.save_class_dict(classes)
 
 
 if __name__ == '__main__':
-    classes = utils.load_class_array()
+    # Preprocess data
+    preprocess('train')
+    preprocess('test')
+
+    # Display data
+    obj_classes = utils.load_class_array()
     train_set = YoloPascalVocDataset('train')
     num_negatives = 0
     for data, label in train_set:
         num_negatives += torch.sum(label < 0).item()
-        utils.plot_boxes(data, label, classes)
+        utils.plot_boxes(data, label, obj_classes)
     print(num_negatives)
