@@ -74,10 +74,7 @@ for epoch in tqdm(range(config.WARMUP_EPOCHS + config.EPOCHS), desc='Epoch'):
 
         optimizer.zero_grad()
         predictions = model.forward(data)
-        # print('\n############################')
-        # print('predictions', torch.min(predictions).item(), torch.max(predictions).item())
         loss = loss_function(predictions, labels)
-        print('LOSS', loss.item())
         loss.backward()
         optimizer.step()
 

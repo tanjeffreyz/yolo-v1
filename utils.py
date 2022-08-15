@@ -116,26 +116,18 @@ def get_iou(p, a):
     a_area = a_area.unsqueeze(3).expand_as(intersection)        # (batch, S, S, 1, B) -> (batch, S, S, B, B)
 
     union = p_area + a_area - intersection
-    # print('union < 0', torch.sum(union < 0).item())
 
     # Catch division-by-zero and negative unions
     invalid_unions = (intersection > union)
     union[invalid_unions] = config.EPSILON
     intersection[invalid_unions] = 0.0
 
-    # print('intersection > union', torch.sum(intersection > union).item())
-    # print('intersection <= union', torch.sum(intersection <= union).item())
-    #
-    # print('intersection', torch.min(intersection).item(), torch.max(intersection).item())
-    # print('union', torch.min(union).item(), torch.max(union).item())
-    #
-    # print('intersection / union', torch.min(intersection / union).item(), torch.max(intersection / union).item())
-    # print('iou size', (intersection / union).size())
-    # print(bbox_attr(a, 1) is bbox_attr(a, 1))
     return intersection / union
 
 
 def bbox_to_coords(t):
+    """Changes format of bounding boxes from [x, y, width, height] to ([x1, y1], [x2, y2])."""
+
     width = bbox_attr(t, 2)
     x = bbox_attr(t, 0)
     x1 = x - width / 2
