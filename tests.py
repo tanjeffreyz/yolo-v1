@@ -33,6 +33,16 @@ class TestLossFunction(unittest.TestCase):
         result = utils.get_iou(test, test)
         self.assertEqual(result.size(), (config.BATCH_SIZE, config.S, config.S, config.B, config.B))
 
+    def test_torch_max(self):
+        test = torch.rand((4, 2, 2))
+        print(test)
+        # print(torch.max(test, dim=0)[0])
+        # print(torch.max(test, dim=1))
+        # print(torch.argmax(test, dim=-2).size())
+        print(torch.max(test, dim=-2)[0].size())
+        print(torch.argmax(torch.max(test, dim=-2)[0], dim=-1, keepdim=True).size())
+        print(torch.zeros((4, 2)).scatter_(-1, torch.argmax(torch.max(test, dim=-2)[0], dim=-1, keepdim=True), value=1))
+
     def test_zeros(self):
         test = torch.zeros(TestLossFunction.SHAPE)
         loss_func = SumSquaredErrorLoss()

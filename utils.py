@@ -19,14 +19,19 @@ class SumSquaredErrorLoss(nn.Module):
 
     def forward(self, p, a):
         # Calculate IOU of each box
-        iou = get_iou(p, a)
+        iou = get_iou(p, a)                     # (batch, S, S, B, B)
+        max_iou = torch.max(iou, dim=-2)[0]     # (batch, S, S, B)
 
         # print('###################')
         bbox_mask = bbox_attr(a, 4) > 0
-        # obj_ij = bbox_attr(a, 4) > 0        # Indicator variable, 1 if grid I, bbox J contains object
-        noobj_ij = ~obj_ij                  # Opposite, 1's if grid I, bbox J contains NO object
-        obj_i = bbox_mask[:, :, :, 0:1]        # 1 if grid I has any object at all
-        # print('obj_ij', obj_ij.size())
+        obj_ij = torch.zeros_like(bbox_mask).scatter_(          # (batch, S, S, B)
+            -1,
+            torch.argmax(max_iou, dim=-1, keepdim=True),        # (batch, S, S, B)
+            value=1
+        )
+        noobj_ij = ~obj_ij                      # Opposite, 1's if grid I, bbox J NOT responsible for prediction
+        obj_i = bbox_mask[:, :, :, 0:1]         # 1 if grid I has any object at all
+        print('obj_ij', obj_ij.size())
         # print('obj_ij', obj_i.size())
 
         # XY position losses
@@ -43,8 +48,8 @@ class SumSquaredErrorLoss(nn.Module):
         # print(torch.sum(torch.isnan(dim_losses)).item())
         # print('dim_losses', dim_losses.size())
 
-        # Confidence losses
-        confidence_losses = (bbox_attr(p, 4) - torch.ones(obj_ij.size()).to('cuda')) ** 2
+        # Confidence losses (target confidence is IOU)
+        confidence_losses = (bbox_attr(p, 4) - max_iou) ** 2
         # print('confidence_losses', confidence_losses.size())
         # print(confidence_losses[obj_ij].size(), confidence_losses[noobj_ij].size())
         # print(torch.sum(torch.isnan(confidence_losses)).item())
@@ -88,8 +93,9 @@ def get_iou(p, a):
     a_area = a_area.unsqueeze(-2).expand_as(intersection)
     union = p_area + a_area - intersection
 
-    # Clamp IOU to be non-negative
+    # Clamp IOU to be non-negative and catch division-by-zero
     intersection[intersection < 0] = 0
+    union[union == 0] = 1E6
     return intersection / union
 
 
