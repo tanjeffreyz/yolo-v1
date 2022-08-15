@@ -19,7 +19,7 @@ class SumSquaredErrorLoss(nn.Module):
 
     def forward(self, p, a):
         # Calculate IOU of each box
-        iou = self.iou(p, a)
+        iou = get_iou(p, a)
 
         # print('###################')
         bbox_mask = bbox_attr(a, 4) > 0
@@ -60,14 +60,42 @@ class SumSquaredErrorLoss(nn.Module):
                 + torch.sum(self.l_noobj * noobj_ij * confidence_losses)
         return total / config.BATCH_SIZE
 
-    def iou(self, p, a):
-        
-        pass
-
 
 #################################
 #       Helper Functions        #
 #################################
+def get_iou(p, a):
+    p_tl, p_br = bbox_to_coords(p)          # <batch, S, S, B, 2>
+    a_tl, a_br = bbox_to_coords(a)
+
+    # Largest top-left corner and smallest bottom-right corner give the intersection
+    coords_join_size = (-1, -1, -1, config.B, config.B, 2)
+    tl = torch.max(
+        p_tl.unsqueeze(-1).expand(coords_join_size),      # <batch, S, S, B, B, 2>
+        a_tl.unsqueeze(-2).expand(coords_join_size)
+    )
+    br = torch.min(
+        p_br,
+        a_br
+    )
+    intersection_sides = br - tl
+    intersection = intersection_sides
+
+
+def bbox_to_coords(t):
+    width = bbox_attr(t, 2)
+    x = bbox_attr(t, 0)
+    x1 = x - width / 2
+    x2 = x + width / 2
+
+    height = bbox_attr(t, 3)
+    y = bbox_attr(t, 1)
+    y1 = y - height / 2
+    y2 = y + height / 2
+
+    return torch.stack((x1, y1), dim=4), torch.stack((x2, y2), dim=4)
+
+
 def scheduler_lambda(epoch):
     warmup_step = config.WARMUP_EPOCHS / 3
     if epoch < warmup_step:

@@ -1,6 +1,8 @@
 import config
 import torch
 import unittest
+
+import utils
 from models import YOLOv1
 from utils import SumSquaredErrorLoss
 
@@ -19,6 +21,12 @@ class TestModel(unittest.TestCase):
 
 class TestLossFunction(unittest.TestCase):
     SHAPE = (config.BATCH_SIZE, config.S, config.S, 5 * config.B + config.C)
+
+    def test_bbox_to_coords(self):
+        test = torch.rand(TestLossFunction.SHAPE)
+        result = utils.bbox_to_coords(test)
+        self.assertEqual(result[0].size(), (config.BATCH_SIZE, config.S, config.S, config.B, 2))
+        self.assertEqual(result[1].size(), (config.BATCH_SIZE, config.S, config.S, config.B, 2))
 
     def test_zeros(self):
         test = torch.zeros(TestLossFunction.SHAPE)
