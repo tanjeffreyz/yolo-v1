@@ -21,8 +21,8 @@ loss_function = utils.SumSquaredErrorLoss()
 optimizer = torch.optim.SGD(
     model.parameters(),
     lr=config.LEARNING_RATE,
-    momentum=0.1,
-    weight_decay=0.0005
+    momentum=0.9,
+    weight_decay=5E-4
 )
 
 # Learning rate scheduler
@@ -77,7 +77,7 @@ for epoch in tqdm(range(config.WARMUP_EPOCHS + config.EPOCHS), desc='Epoch'):
         # print('\n############################')
         # print('predictions', torch.min(predictions).item(), torch.max(predictions).item())
         loss = loss_function(predictions, labels)
-        # print('TOTAL LOSS', loss.item())
+        print('LOSS', loss.item())
         loss.backward()
         optimizer.step()
 
