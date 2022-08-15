@@ -71,11 +71,11 @@ def get_iou(p, a):
     # Largest top-left corner and smallest bottom-right corner give the intersection
     coords_join_size = (-1, -1, -1, config.B, config.B, 2)
     tl = torch.max(
-        p_tl.unsqueeze(-1).expand(coords_join_size),        # (batch, S, S, B, B, 2)
-        a_tl.unsqueeze(-2).expand(coords_join_size)
+        p_tl.unsqueeze(-1).expand(coords_join_size),        # (batch, S, S, B, 1, 2) -> (batch, S, S, B, B, 2)
+        a_tl.unsqueeze(-2).expand(coords_join_size)         # (batch, S, S, 1, B, 2) -> (batch, S, S, B, B, 2)
     )
     br = torch.min(
-        p_br.unsqueeze(-1).expand(coords_join_size),        # (batch, S, S, B, B, 2)
+        p_br.unsqueeze(-1).expand(coords_join_size),
         a_br.unsqueeze(-2).expand(coords_join_size)
     )
     intersection_sides = br - tl
@@ -88,6 +88,8 @@ def get_iou(p, a):
     a_area = a_area.unsqueeze(-2).expand_as(intersection)
     union = p_area + a_area - intersection
 
+    # Clamp IOU to be non-negative
+    intersection[intersection < 0] = 0
     return intersection / union
 
 
