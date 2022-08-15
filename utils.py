@@ -65,21 +65,30 @@ class SumSquaredErrorLoss(nn.Module):
 #       Helper Functions        #
 #################################
 def get_iou(p, a):
-    p_tl, p_br = bbox_to_coords(p)          # <batch, S, S, B, 2>
+    p_tl, p_br = bbox_to_coords(p)          # (batch, S, S, B, 2)
     a_tl, a_br = bbox_to_coords(a)
 
     # Largest top-left corner and smallest bottom-right corner give the intersection
     coords_join_size = (-1, -1, -1, config.B, config.B, 2)
     tl = torch.max(
-        p_tl.unsqueeze(-1).expand(coords_join_size),      # <batch, S, S, B, B, 2>
+        p_tl.unsqueeze(-1).expand(coords_join_size),        # (batch, S, S, B, B, 2)
         a_tl.unsqueeze(-2).expand(coords_join_size)
     )
     br = torch.min(
-        p_br,
-        a_br
+        p_br.unsqueeze(-1).expand(coords_join_size),        # (batch, S, S, B, B, 2)
+        a_br.unsqueeze(-2).expand(coords_join_size)
     )
     intersection_sides = br - tl
-    intersection = intersection_sides
+    intersection = intersection_sides[:, :, :, :, :, 0] \
+                   * intersection_sides[:, :, :, :, :, 1]   # (batch, S, S, B, B)
+
+    p_area = bbox_attr(p, 2) * bbox_attr(p, 3)              # (batch, S, S, B)
+    p_area = p_area.unsqueeze(-1).expand_as(intersection)   # (batch, S, S, B, B)
+    a_area = bbox_attr(a, 2) * bbox_attr(a, 3)
+    a_area = a_area.unsqueeze(-2).expand_as(intersection)
+    union = p_area + a_area - intersection
+
+    return intersection / union
 
 
 def bbox_to_coords(t):

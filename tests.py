@@ -22,11 +22,16 @@ class TestModel(unittest.TestCase):
 class TestLossFunction(unittest.TestCase):
     SHAPE = (config.BATCH_SIZE, config.S, config.S, 5 * config.B + config.C)
 
-    def test_bbox_to_coords(self):
+    def test_bbox_to_coords_size(self):
         test = torch.rand(TestLossFunction.SHAPE)
         result = utils.bbox_to_coords(test)
         self.assertEqual(result[0].size(), (config.BATCH_SIZE, config.S, config.S, config.B, 2))
         self.assertEqual(result[1].size(), (config.BATCH_SIZE, config.S, config.S, config.B, 2))
+
+    def test_get_iou_size(self):
+        test = torch.rand(TestLossFunction.SHAPE)
+        result = utils.get_iou(test, test)
+        self.assertEqual(result.size(), (config.BATCH_SIZE, config.S, config.S, config.B, config.B))
 
     def test_zeros(self):
         test = torch.zeros(TestLossFunction.SHAPE)
