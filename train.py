@@ -3,12 +3,13 @@ import os
 import config
 import utils
 import numpy as np
+import torchvision.transforms as T
 from tqdm import tqdm
 from datetime import datetime
 from torch.utils.tensorboard import SummaryWriter
 from torch.utils.data import DataLoader
 from data import YoloPascalVocDataset
-from models import YOLOv1, YOLOv1ResNet
+from models import *
 
 
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
@@ -18,12 +19,6 @@ now = datetime.now()
 
 model = YOLOv1ResNet().to(device)
 loss_function = utils.SumSquaredErrorLoss()
-# optimizer = torch.optim.SGD(
-#     model.parameters(),
-#     lr=config.LEARNING_RATE,
-#     momentum=0.9,
-#     weight_decay=5E-4
-# )
 optimizer = torch.optim.Adam(
     model.parameters(),
     lr=config.LEARNING_RATE
@@ -36,8 +31,9 @@ scheduler = torch.optim.lr_scheduler.LambdaLR(
 )
 
 # Load the dataset
-train_set = YoloPascalVocDataset('train')
-test_set = YoloPascalVocDataset('test')
+transform = T.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
+train_set = YoloPascalVocDataset('train', transform=transform)
+test_set = YoloPascalVocDataset('test', transform=transform)
 
 train_loader = DataLoader(train_set, batch_size=config.BATCH_SIZE, shuffle=True)
 test_loader = DataLoader(test_set, batch_size=config.BATCH_SIZE)

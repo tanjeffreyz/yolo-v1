@@ -21,6 +21,7 @@ class SumSquaredErrorLoss(nn.Module):
         # Calculate IOU of each box
         iou = get_iou(p, a)                     # (batch, S, S, B, B)
         max_iou = torch.max(iou, dim=-1)[0]     # (batch, S, S, B)
+        print(max_iou.size())
 
         # Get masks
         bbox_mask = bbox_attr(a, 4) > 0
@@ -46,7 +47,7 @@ class SumSquaredErrorLoss(nn.Module):
         pos_losses = x_losses + y_losses
         print('pos_losses', pos_losses.item())
 
-        # Bbox dimension losses (not using square root b/c width and height can be negative)
+        # Bbox dimension losses
         width_losses = F.mse_loss(
             obj_ij * torch.sqrt(torch.clamp(bbox_attr(p, 2), min=config.EPSILON)),
             obj_ij * torch.sqrt(torch.clamp(bbox_attr(a, 2), min=config.EPSILON)),

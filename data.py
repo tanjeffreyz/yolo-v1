@@ -12,12 +12,16 @@ from torch.utils.data import Dataset
 class YoloPascalVocDataset(Dataset):
     index = 0
 
-    def __init__(self, folder):
+    def __init__(self, folder, transform=None):
         assert folder in {'train', 'test'}
+        self.transform = transform
         self.files = glob.glob(os.path.join('data', folder, '*'))
 
     def __getitem__(self, i):
-        return torch.load(self.files[i])
+        d, t = torch.load(self.files[i])
+        if self.transform is not None:
+            d = self.transform(d)
+        return d, t
 
     def __len__(self):
         return len(self.files)
@@ -99,8 +103,13 @@ if __name__ == '__main__':
     # Display data
     obj_classes = utils.load_class_array()
     train_set = YoloPascalVocDataset('train')
-    num_negatives = 0
+    negative_labels = 0
+    smallest = 0
+    largest = 0
     for data, label in train_set:
-        num_negatives += torch.sum(label < 0).item()
+        negative_labels += torch.sum(label < 0).item()
+        smallest = min(smallest, torch.min(data).item())
+        largest = max(largest, torch.max(data).item())
         utils.plot_boxes(data, label, obj_classes)
-    print(num_negatives)
+    print('num_negatives', negative_labels)
+    print('dist', smallest, largest)

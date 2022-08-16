@@ -1,7 +1,7 @@
 import config
 import torch
 import torch.nn as nn
-from torchvision.models.resnet import resnet50
+from torchvision.models import resnet50
 
 
 #################################
@@ -12,7 +12,7 @@ class YOLOv1ResNet(nn.Module):
         super().__init__()
         self.depth = config.B * 5 + config.C
 
-        backbone = resnet50()
+        backbone = resnet50(pretrained=True)
         backbone.fc = nn.Linear(2048, 4096)                         # Linear1
 
         self.model = nn.Sequential(
