@@ -8,7 +8,7 @@ from datetime import datetime
 from torch.utils.tensorboard import SummaryWriter
 from torch.utils.data import DataLoader
 from data import YoloPascalVocDataset
-from models import YOLOv1
+from models import YOLOv1, YOLOv1ResNet
 
 
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
@@ -74,7 +74,9 @@ for epoch in tqdm(range(config.WARMUP_EPOCHS + config.EPOCHS), desc='Epoch'):
 
         optimizer.zero_grad()
         predictions = model.forward(data)
+        # print('\n#############################')
         loss = loss_function(predictions, labels)
+        # print(loss.item())
         loss.backward()
         optimizer.step()
 

@@ -1,8 +1,37 @@
 import config
 import torch
 import torch.nn as nn
+from torchvision.models.resnet import resnet50
 
 
+#################################
+#       Transfer Learning       #
+#################################
+class YOLOv1ResNet(nn.Module):
+    def __init__(self):
+        super().__init__()
+        self.depth = config.B * 5 + config.C
+
+        backbone = resnet50()
+        backbone.fc = nn.Linear(2048, 4096)                         # Linear1
+
+        self.model = nn.Sequential(
+            backbone,
+            nn.Dropout(),
+            nn.ReLU(),
+            nn.Linear(4096, config.S * config.S * self.depth)       # Linear2
+        )
+
+    def forward(self, x):
+        return torch.reshape(
+            self.model.forward(x),
+            (x.size(dim=0), config.S, config.S, self.depth)
+        )
+
+
+###########################
+#       From Scratch      #
+###########################
 class YOLOv1(nn.Module):
     def __init__(self):
         super().__init__()

@@ -1,22 +1,30 @@
 import config
 import torch
 import unittest
-
 import utils
-from models import YOLOv1
+from models import YOLOv1, YOLOv1ResNet
 from utils import SumSquaredErrorLoss
 
 
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
 
-class TestModel(unittest.TestCase):
+class TestScratchModel(unittest.TestCase):
     def test_shape(self):
-        batch_size = 128
+        batch_size = 64
         test_model = YOLOv1().to(device)
         test_tensor = torch.rand((batch_size, 3, config.IMAGE_SIZE[0], config.IMAGE_SIZE[1])).to(device)
         result = test_model.forward(test_tensor)
         self.assertEqual(tuple(result.size()), (128, config.S, config.S, test_model.depth))
+
+
+class TestTransferModel(unittest.TestCase):
+    def test_shape(self):
+        batch_size = 64
+        test_model = YOLOv1ResNet().to(device)
+        test_tensor = torch.rand((batch_size, 3, config.IMAGE_SIZE[0], config.IMAGE_SIZE[1])).to(device)
+        result = test_model.forward(test_tensor)
+        self.assertEqual(tuple(result.size()), (batch_size, config.S, config.S, test_model.depth))
 
 
 class TestLossFunction(unittest.TestCase):
