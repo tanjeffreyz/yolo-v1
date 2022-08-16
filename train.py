@@ -16,13 +16,17 @@ torch.autograd.set_detect_anomaly(True)         # Check for nan loss
 writer = SummaryWriter()
 now = datetime.now()
 
-model = YOLOv1().to(device)
+model = YOLOv1ResNet().to(device)
 loss_function = utils.SumSquaredErrorLoss()
-optimizer = torch.optim.SGD(
+# optimizer = torch.optim.SGD(
+#     model.parameters(),
+#     lr=config.LEARNING_RATE,
+#     momentum=0.9,
+#     weight_decay=5E-4
+# )
+optimizer = torch.optim.Adam(
     model.parameters(),
-    lr=config.LEARNING_RATE,
-    momentum=0.9,
-    weight_decay=5E-4
+    lr=config.LEARNING_RATE
 )
 
 # Learning rate scheduler
@@ -74,9 +78,9 @@ for epoch in tqdm(range(config.WARMUP_EPOCHS + config.EPOCHS), desc='Epoch'):
 
         optimizer.zero_grad()
         predictions = model.forward(data)
-        # print('\n#############################')
+        print('\n#############################')
         loss = loss_function(predictions, labels)
-        # print(loss.item())
+        print('TOTAL_LOSS', loss.item())
         loss.backward()
         optimizer.step()
 
@@ -98,7 +102,9 @@ for epoch in tqdm(range(config.WARMUP_EPOCHS + config.EPOCHS), desc='Epoch'):
                 labels = labels.to(device)
 
                 predictions = model.forward(data)
+                print('\n#############################')
                 loss = loss_function(predictions, labels)
+                print('TOTAL_LOSS', loss.item())
 
                 test_loss += loss.item() / len(test_loader)
                 del data, labels

@@ -44,7 +44,7 @@ class SumSquaredErrorLoss(nn.Module):
             reduction='sum'
         )
         pos_losses = x_losses + y_losses
-        # print('pos_losses', pos_losses.item())
+        print('pos_losses', pos_losses.item())
 
         # Bbox dimension losses (not using square root b/c width and height can be negative)
         width_losses = F.mse_loss(
@@ -58,7 +58,7 @@ class SumSquaredErrorLoss(nn.Module):
             reduction='sum'
         )
         dim_losses = width_losses + height_losses
-        # print('dim_losses', dim_losses.item())
+        print('dim_losses', dim_losses.item())
         # print(torch.sum(bbox_attr(p, 2) < 0).item())
         # print(torch.sum(bbox_attr(p, 3) < 0).item())
         # print(torch.sum(bbox_attr(a, 2) < 0).item())
@@ -70,13 +70,13 @@ class SumSquaredErrorLoss(nn.Module):
             obj_ij * max_iou,
             reduction='sum'
         )
-        # print('obj_confidence_losses', obj_confidence_losses.item())
+        print('obj_confidence_losses', obj_confidence_losses.item())
         noobj_confidence_losses = F.mse_loss(
             noobj_ij * bbox_attr(p, 4),
             0.0 * max_iou,
             reduction='sum'
         )
-        # print('noobj_confidence_losses', noobj_confidence_losses.item())
+        print('noobj_confidence_losses', noobj_confidence_losses.item())
 
         # Classification losses
         class_losses = F.mse_loss(
@@ -84,7 +84,7 @@ class SumSquaredErrorLoss(nn.Module):
             obj_i * F.softmax(a[:, :, :, 5*config.B:], dim=3),
             reduction='sum'
         )
-        # print('class_losses', class_losses.item())
+        print('class_losses', class_losses.item())
 
         total = self.l_coord * (pos_losses + dim_losses) \
                 + obj_confidence_losses \
@@ -139,13 +139,13 @@ def bbox_to_coords(t):
 
     width = bbox_attr(t, 2)
     x = bbox_attr(t, 0)
-    x1 = x - width / 2
-    x2 = x + width / 2
+    x1 = x - width / 2.0
+    x2 = x + width / 2.0
 
     height = bbox_attr(t, 3)
     y = bbox_attr(t, 1)
-    y1 = y - height / 2
-    y2 = y + height / 2
+    y1 = y - height / 2.0
+    y2 = y + height / 2.0
 
     return torch.stack((x1, y1), dim=4), torch.stack((x2, y2), dim=4)
 
@@ -245,7 +245,7 @@ def plot_boxes(data, labels, classes, threshold=0.5):
                     )
                     ax.add_patch(rect)
                     ax.text(
-                        bbox_tl[0] + width / 2,
+                        bbox_tl[0],
                         bbox_tl[1],
                         f'{classes[class_index]} {round(confidence * 100, 1)}%',
                         bbox=dict(facecolor='orange', edgecolor='none'),
