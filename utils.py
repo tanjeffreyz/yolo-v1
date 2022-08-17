@@ -20,8 +20,6 @@ class SumSquaredErrorLoss(nn.Module):
     def forward(self, p, a):
         # Calculate IOU of each box
         iou = get_iou(p, a)                     # (batch, S, S, B, B)
-        print(torch.sum(iou < 0.0).item())
-        print(torch.sum(iou > 1.0).item())
         max_iou = torch.max(iou, dim=-1)[0]     # (batch, S, S, B)
 
         # Get masks
@@ -100,6 +98,8 @@ class SumSquaredErrorLoss(nn.Module):
 #################################
 def get_iou(p, a):
     p_tl, p_br = bbox_to_coords(p)          # (batch, S, S, B, 2)
+    # print(p_tl)
+    # print(p_br)
     a_tl, a_br = bbox_to_coords(a)
 
     # Largest top-left corner and smallest bottom-right corner give the intersection
@@ -112,26 +112,30 @@ def get_iou(p, a):
         p_br.unsqueeze(4).expand(coords_join_size),
         a_br.unsqueeze(3).expand(coords_join_size)
     )
+    # print(tl)
+    # print(br)
 
-    intersection_sides = br - tl
+    intersection_sides = torch.clamp(br - tl, min=0.0)
+    # print(intersection_sides)
     intersection = intersection_sides[:, :, :, :, :, 0] \
                    * intersection_sides[:, :, :, :, :, 1]       # (batch, S, S, B, B)
 
-    # Clamp intersection to be non-negative
-    intersection = torch.clamp(intersection, min=0.0)
-
-    p_area = bbox_attr(p, 2) * bbox_attr(p, 3)                  # (batch, S, S, B)
+    p_sides = p_br - p_tl
+    p_area = p_sides[:, :, :, :, 0] * p_sides[:, :, :, :, 1]
+    # p_area = bbox_attr(p, 2) * bbox_attr(p, 3)                  # (batch, S, S, B)
     p_area = p_area.unsqueeze(4).expand_as(intersection)        # (batch, S, S, B, 1) -> (batch, S, S, B, B)
 
-    a_area = bbox_attr(a, 2) * bbox_attr(a, 3)                  # (batch, S, S, B)
+    a_sides = a_br - a_tl
+    a_area = a_sides[:, :, :, :, 0] * a_sides[:, :, :, :, 1]
+    # a_area = bbox_attr(a, 2) * bbox_attr(a, 3)                  # (batch, S, S, B)
     a_area = a_area.unsqueeze(3).expand_as(intersection)        # (batch, S, S, 1, B) -> (batch, S, S, B, B)
 
     union = p_area + a_area - intersection
 
-    # Catch division-by-zero and negative unions
-    invalid_unions = (intersection > union)
-    union[invalid_unions] = config.EPSILON
-    intersection[invalid_unions] = 0.0
+    # Catch division-by-zero
+    zero_unions = (union == 0.0)
+    union[zero_unions] = config.EPSILON
+    intersection[zero_unions] = 0.0
 
     return intersection / union
 
