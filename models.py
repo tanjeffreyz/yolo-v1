@@ -1,7 +1,7 @@
 import config
 import torch
 import torch.nn as nn
-from torchvision.models import resnet50
+from torchvision.models import resnet50, ResNet50_Weights
 
 
 #################################
@@ -12,20 +12,57 @@ class YOLOv1ResNet(nn.Module):
         super().__init__()
         self.depth = config.B * 5 + config.C
 
-        backbone = resnet50(pretrained=True)
-        backbone.fc = nn.Linear(2048, 4096)                         # Linear1
+        # Load backbone ResNet
+        backbone = resnet50(weights=ResNet50_Weights.DEFAULT)
+        backbone.requires_grad_(False)            # Freeze backbone weights
+
+        # Delete last two layers and attach detection layers
+        backbone.avgpool = nn.Identity()
+        backbone.fc = nn.Identity()
 
         self.model = nn.Sequential(
             backbone,
+            Reshape(2048, 14, 14),
+            DetectionNet(2048)              # 4 conv, 2 linear
+        )
+
+    def forward(self, x):
+        return self.model.forward(x)
+
+
+class DetectionNet(nn.Module):
+    """The layers added on for detection as described in the paper."""
+
+    def __init__(self, in_size):
+        super().__init__()
+
+        self.depth = 5 * config.B + config.C
+        self.model = nn.Sequential(
+            nn.Conv2d(in_size, 1024, kernel_size=3, padding=1),
+            nn.LeakyReLU(negative_slope=0.1),
+
+            nn.Conv2d(1024, 1024, kernel_size=3, stride=2, padding=1),
+            nn.LeakyReLU(negative_slope=0.1),
+
+            nn.Conv2d(1024, 1024, kernel_size=3, padding=1),
+            nn.LeakyReLU(negative_slope=0.1),
+
+            nn.Conv2d(1024, 1024, kernel_size=3, padding=1),
+            nn.LeakyReLU(negative_slope=0.1),
+
+            nn.Flatten(),
+
+            nn.Linear(7 * 7 * 1024, 4096),
             nn.Dropout(),
-            nn.ReLU(),
-            nn.Linear(4096, config.S * config.S * self.depth)       # Linear2
+            nn.LeakyReLU(negative_slope=0.1),
+
+            nn.Linear(4096, config.S * config.S * self.depth)
         )
 
     def forward(self, x):
         return torch.reshape(
             self.model.forward(x),
-            (x.size(dim=0), config.S, config.S, self.depth)
+            (-1, config.S, config.S, self.depth)
         )
 
 
@@ -115,9 +152,18 @@ class YOLOv1(nn.Module):
         )
 
 
-#########################
-#       Probing         #
-#########################
+#############################
+#       Helper Modules      #
+#############################
+class Reshape(nn.Module):
+    def __init__(self, *args):
+        super().__init__()
+        self.shape = tuple(args)
+
+    def forward(self, x):
+        return torch.reshape(x, (-1, *self.shape))
+
+
 class Probe(nn.Module):
     names = set()
 

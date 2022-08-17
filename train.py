@@ -31,9 +31,8 @@ scheduler = torch.optim.lr_scheduler.LambdaLR(
 )
 
 # Load the dataset
-transform = T.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
-train_set = YoloPascalVocDataset('train', transform=transform)
-test_set = YoloPascalVocDataset('test', transform=transform)
+train_set = YoloPascalVocDataset('train', transform=config.TRANSFORM)
+test_set = YoloPascalVocDataset('test', transform=config.TRANSFORM)
 
 train_loader = DataLoader(train_set, batch_size=config.BATCH_SIZE, shuffle=True)
 test_loader = DataLoader(test_set, batch_size=config.BATCH_SIZE)
@@ -67,6 +66,7 @@ def save_metrics():
 #       Train       #
 #####################
 for epoch in tqdm(range(config.WARMUP_EPOCHS + config.EPOCHS), desc='Epoch'):
+    model.train()
     train_loss = 0
     for data, labels in tqdm(train_loader, desc='Train', leave=False):
         data = data.to(device)
@@ -91,6 +91,7 @@ for epoch in tqdm(range(config.WARMUP_EPOCHS + config.EPOCHS), desc='Epoch'):
     writer.add_scalar('Loss/train', train_loss, epoch)
 
     if epoch % 4 == 0:
+        model.eval()
         with torch.no_grad():
             test_loss = 0
             for data, labels in tqdm(test_loader, desc='Test', leave=False):

@@ -18,7 +18,7 @@ class TestScratchModel(unittest.TestCase):
         self.assertEqual(tuple(result.size()), (128, config.S, config.S, test_model.depth))
 
 
-class TestTransferModel(unittest.TestCase):
+class TestTransferModels(unittest.TestCase):
     def test_shape(self):
         batch_size = 64
         test_model = YOLOv1ResNet().to(device)

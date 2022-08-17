@@ -20,8 +20,9 @@ class SumSquaredErrorLoss(nn.Module):
     def forward(self, p, a):
         # Calculate IOU of each box
         iou = get_iou(p, a)                     # (batch, S, S, B, B)
+        print(torch.sum(iou < 0.0).item())
+        print(torch.sum(iou > 1.0).item())
         max_iou = torch.max(iou, dim=-1)[0]     # (batch, S, S, B)
-        print(max_iou.size())
 
         # Get masks
         bbox_mask = bbox_attr(a, 4) > 0
