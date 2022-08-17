@@ -238,8 +238,8 @@ def plot_boxes(data, labels, classes, threshold=0.5):
                     width = bbox[2] * config.IMAGE_SIZE[0]
                     height = bbox[3] * config.IMAGE_SIZE[1]
                     bbox_tl = (
-                        bbox[0] * config.IMAGE_SIZE[0] + j * grid_size_x - width / 2,
-                        bbox[1] * config.IMAGE_SIZE[1] + i * grid_size_y - height / 2
+                        (bbox[0] + j) * grid_size_x - width / 2,
+                        (bbox[1] + i) * grid_size_y - height / 2
                     )
                     rect = patches.Rectangle(
                         bbox_tl,
