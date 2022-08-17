@@ -36,23 +36,24 @@ class DetectionNet(nn.Module):
     def __init__(self, in_channels):
         super().__init__()
 
+        inner_channels = 1024
         self.depth = 5 * config.B + config.C
         self.model = nn.Sequential(
-            nn.Conv2d(in_channels, 1024, kernel_size=3, padding=1),
+            nn.Conv2d(in_channels, inner_channels, kernel_size=3, padding=1),
             nn.LeakyReLU(negative_slope=0.1),
 
-            nn.Conv2d(1024, 1024, kernel_size=3, stride=2, padding=1),
+            nn.Conv2d(inner_channels, inner_channels, kernel_size=3, stride=2, padding=1),
             nn.LeakyReLU(negative_slope=0.1),
 
-            nn.Conv2d(1024, 1024, kernel_size=3, padding=1),
+            nn.Conv2d(inner_channels, inner_channels, kernel_size=3, padding=1),
             nn.LeakyReLU(negative_slope=0.1),
 
-            nn.Conv2d(1024, 1024, kernel_size=3, padding=1),
+            nn.Conv2d(inner_channels, inner_channels, kernel_size=3, padding=1),
             nn.LeakyReLU(negative_slope=0.1),
 
             nn.Flatten(),
 
-            nn.Linear(7 * 7 * 1024, 4096),
+            nn.Linear(7 * 7 * inner_channels, 4096),
             nn.Dropout(),
             nn.LeakyReLU(negative_slope=0.1),
 
