@@ -80,8 +80,8 @@ class SumSquaredErrorLoss(nn.Module):
 
         # Classification losses
         class_losses = F.mse_loss(
-            obj_i * F.softmax(p[:, :, :, 5*config.B:], dim=3),
-            obj_i * a[:, :, :, 5*config.B:],            # No need for sigmoid on the ground truth
+            obj_i * p[:, :, :, 5*config.B:],
+            obj_i * a[:, :, :, 5*config.B:],
             reduction='sum'
         )
         print('class_losses', class_losses.item())

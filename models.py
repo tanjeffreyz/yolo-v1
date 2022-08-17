@@ -33,12 +33,12 @@ class YOLOv1ResNet(nn.Module):
 class DetectionNet(nn.Module):
     """The layers added on for detection as described in the paper."""
 
-    def __init__(self, in_size):
+    def __init__(self, in_channels):
         super().__init__()
 
         self.depth = 5 * config.B + config.C
         self.model = nn.Sequential(
-            nn.Conv2d(in_size, 1024, kernel_size=3, padding=1),
+            nn.Conv2d(in_channels, 1024, kernel_size=3, padding=1),
             nn.LeakyReLU(negative_slope=0.1),
 
             nn.Conv2d(1024, 1024, kernel_size=3, stride=2, padding=1),

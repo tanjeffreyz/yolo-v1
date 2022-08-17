@@ -31,10 +31,10 @@ optimizer = torch.optim.Adam(
 )
 
 # Learning rate scheduler
-scheduler = torch.optim.lr_scheduler.LambdaLR(
-    optimizer,
-    lr_lambda=utils.scheduler_lambda
-)
+# scheduler = torch.optim.lr_scheduler.LambdaLR(
+#     optimizer,
+#     lr_lambda=utils.scheduler_lambda
+# )
 
 # Load the dataset
 train_set = YoloPascalVocDataset('train', transform=config.TRANSFORM)
@@ -90,8 +90,8 @@ for epoch in tqdm(range(config.WARMUP_EPOCHS + config.EPOCHS), desc='Epoch'):
         del data, labels
 
     # Step and graph scheduler once an epoch
-    writer.add_scalar('Learning Rate', scheduler.get_last_lr()[0], epoch)
-    scheduler.step()
+    # writer.add_scalar('Learning Rate', scheduler.get_last_lr()[0], epoch)
+    # scheduler.step()
 
     train_losses = np.append(train_losses, [[epoch], [train_loss]], axis=1)
     writer.add_scalar('Loss/train', train_loss, epoch)
