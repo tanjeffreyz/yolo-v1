@@ -87,7 +87,7 @@ def preprocess(folder):
 
                 # Insert class one-hot encoding into ground truth
                 one_hot = torch.zeros(config.C)
-                one_hot[class_index] = 1
+                one_hot[class_index] = 1.0
                 ground_truth[row, col, -config.C:] = one_hot
 
             # Save preprocessed data
@@ -110,6 +110,7 @@ if __name__ == '__main__':
         negative_labels += torch.sum(label < 0).item()
         smallest = min(smallest, torch.min(data).item())
         largest = max(largest, torch.max(data).item())
+        print(label[:, :, -config.C:])
         utils.plot_boxes(data, label, obj_classes)
     print('num_negatives', negative_labels)
     print('dist', smallest, largest)

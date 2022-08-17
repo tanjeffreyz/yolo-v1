@@ -23,7 +23,7 @@ class SumSquaredErrorLoss(nn.Module):
         max_iou = torch.max(iou, dim=-1)[0]     # (batch, S, S, B)
 
         # Get masks
-        bbox_mask = bbox_attr(a, 4) > 0
+        bbox_mask = bbox_attr(a, 4) > 0.0
         obj_ij = torch.zeros_like(bbox_mask).scatter_(          # (batch, S, S, B)
             -1,
             torch.argmax(max_iou, dim=-1, keepdim=True),        # (batch, S, S, B)
@@ -81,7 +81,7 @@ class SumSquaredErrorLoss(nn.Module):
         # Classification losses
         class_losses = F.mse_loss(
             obj_i * F.softmax(p[:, :, :, 5*config.B:], dim=3),
-            obj_i * F.softmax(a[:, :, :, 5*config.B:], dim=3),
+            obj_i * a[:, :, :, 5*config.B:],            # No need for sigmoid on the ground truth
             reduction='sum'
         )
         print('class_losses', class_losses.item())
