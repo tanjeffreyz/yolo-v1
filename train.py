@@ -19,16 +19,16 @@ now = datetime.now()
 
 model = YOLOv1ResNet().to(device)
 loss_function = utils.SumSquaredErrorLoss()
-optimizer = torch.optim.SGD(
-    model.parameters(),
-    lr=config.LEARNING_RATE,
-    momentum=0.9,
-    weight_decay=5E-4
-)
-# optimizer = torch.optim.Adam(
+# optimizer = torch.optim.SGD(
 #     model.parameters(),
-#     lr=config.LEARNING_RATE
+#     lr=config.LEARNING_RATE,
+#     momentum=0.9,
+#     weight_decay=5E-4
 # )
+optimizer = torch.optim.Adam(
+    model.parameters(),
+    lr=config.LEARNING_RATE
+)
 
 # Learning rate scheduler
 scheduler = torch.optim.lr_scheduler.LambdaLR(

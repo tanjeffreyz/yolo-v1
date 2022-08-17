@@ -120,14 +120,14 @@ def get_iou(p, a):
     intersection = intersection_sides[:, :, :, :, :, 0] \
                    * intersection_sides[:, :, :, :, :, 1]       # (batch, S, S, B, B)
 
-    p_sides = p_br - p_tl
-    p_area = p_sides[:, :, :, :, 0] * p_sides[:, :, :, :, 1]
-    # p_area = bbox_attr(p, 2) * bbox_attr(p, 3)                  # (batch, S, S, B)
+    # p_sides = p_br - p_tl
+    # p_area = p_sides[:, :, :, :, 0] * p_sides[:, :, :, :, 1]
+    p_area = bbox_attr(p, 2) * bbox_attr(p, 3)                  # (batch, S, S, B)
     p_area = p_area.unsqueeze(4).expand_as(intersection)        # (batch, S, S, B, 1) -> (batch, S, S, B, B)
 
-    a_sides = a_br - a_tl
-    a_area = a_sides[:, :, :, :, 0] * a_sides[:, :, :, :, 1]
-    # a_area = bbox_attr(a, 2) * bbox_attr(a, 3)                  # (batch, S, S, B)
+    # a_sides = a_br - a_tl
+    # a_area = a_sides[:, :, :, :, 0] * a_sides[:, :, :, :, 1]
+    a_area = bbox_attr(a, 2) * bbox_attr(a, 3)                  # (batch, S, S, B)
     a_area = a_area.unsqueeze(3).expand_as(intersection)        # (batch, S, S, 1, B) -> (batch, S, S, B, B)
 
     union = p_area + a_area - intersection
