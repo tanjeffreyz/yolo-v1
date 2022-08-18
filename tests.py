@@ -3,8 +3,7 @@ import torch
 import unittest
 import utils
 from models import YOLOv1, YOLOv1ResNet
-from utils import SumSquaredErrorLoss
-
+from loss import SumSquaredErrorLoss
 
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 

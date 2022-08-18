@@ -1,12 +1,12 @@
 import torch
 import os
-import utils
 import numpy as np
 from tqdm import tqdm
 from datetime import datetime
 from torch.utils.tensorboard import SummaryWriter
 from torch.utils.data import DataLoader
 from data import YoloPascalVocDataset
+from loss import SumSquaredErrorLoss
 from models import *
 
 
@@ -17,7 +17,7 @@ if __name__ == '__main__':      # Prevent recursive subprocess creation
     now = datetime.now()
 
     model = YOLOv1ResNet().to(device)
-    loss_function = utils.SumSquaredErrorLoss()
+    loss_function = SumSquaredErrorLoss()
     # optimizer = torch.optim.SGD(
     #     model.parameters(),
     #     lr=config.LEARNING_RATE,
