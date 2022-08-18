@@ -64,12 +64,6 @@ class YoloPascalVocDataset(Dataset):
             class_index = self.classes[name]
             x_min, x_max, y_min, y_max = coords
 
-            # Calculate the position of center of bounding box
-            original_mid_x = (x_max + x_min) / 2
-            original_mid_y = (y_max + y_min) / 2
-            col = int(original_mid_x // grid_size_x)        # Row, col based on original bbox to prevent crossing grid boundaries after augment
-            row = int(original_mid_y // grid_size_y)
-
             # Augment labels
             if self.augment:
                 half_width = config.IMAGE_SIZE[0] / 2
@@ -79,11 +73,11 @@ class YoloPascalVocDataset(Dataset):
                 y_min = utils.scale_bbox_coord(y_min, half_height, scale) + y_shift
                 y_max = utils.scale_bbox_coord(y_max, half_height, scale) + y_shift
 
-            # Clamp bbox center to be within its original grid cell
+            # Calculate the position of center of bounding box
             mid_x = (x_max + x_min) / 2
-            mid_x = max(col * grid_size_x, min(mid_x, (col + 1) * grid_size_x))
             mid_y = (y_max + y_min) / 2
-            mid_y = max(row * grid_size_y, min(mid_y, (row + 1) * grid_size_y))
+            col = int(mid_x // grid_size_x)
+            row = int(mid_y // grid_size_y)
 
             # Insert bounding box into ground truth tensor
             if 0 <= col < config.S and 0 <= row < config.S:
