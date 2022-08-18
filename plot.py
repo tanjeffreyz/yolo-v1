@@ -14,7 +14,7 @@ def show_test_images():
 
     dataset = 'test'
     clean_set = YoloPascalVocDataset(dataset)
-    test_set = YoloPascalVocDataset(dataset, transform=config.TRANSFORM)
+    test_set = YoloPascalVocDataset(dataset, augment=True)
     clean_loader = DataLoader(clean_set, batch_size=config.BATCH_SIZE)
     test_loader = DataLoader(test_set, batch_size=config.BATCH_SIZE)
 

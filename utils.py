@@ -220,6 +220,10 @@ def bbox_attr(data, i):
     return data[:, :, :, i:5*config.B:5]
 
 
+def scale_bbox_coord(coord, center, scale):
+    return ((coord - center) * scale) + center
+
+
 def plot_boxes(data, labels, classes, threshold=0.5):
     """Plots bounding boxes on the given image."""
 

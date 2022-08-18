@@ -37,8 +37,8 @@ optimizer = torch.optim.Adam(
 # )
 
 # Load the dataset
-train_set = YoloPascalVocDataset('train', transform=config.TRANSFORM)
-test_set = YoloPascalVocDataset('test', transform=config.TRANSFORM)
+train_set = YoloPascalVocDataset('train', augment=True)
+test_set = YoloPascalVocDataset('test', augment=True)
 
 train_loader = DataLoader(train_set, batch_size=config.BATCH_SIZE, shuffle=True)
 test_loader = DataLoader(test_set, batch_size=config.BATCH_SIZE)

@@ -30,9 +30,14 @@ class TestTransferModels(unittest.TestCase):
 class TestLossFunction(unittest.TestCase):
     SHAPE = (config.BATCH_SIZE, config.S, config.S, 5 * config.B + config.C)
 
-    def test_small_iou(self):
+    def test_small_positive_iou(self):
         test = torch.zeros((1, 1, 1, TestLossFunction.SHAPE[-1]))
         test[0, 0, 0, 0:5] = torch.tensor([1, 1, 1, 1, 1])
+        print(utils.get_iou(test, test))
+
+    def test_small_negative_iou(self):
+        test = torch.zeros((1, 1, 1, TestLossFunction.SHAPE[-1]))
+        test[0, 0, 0, 0:5] = torch.tensor([0, 0, 1, 1, 1])
         print(utils.get_iou(test, test))
 
     def test_bbox_to_coords_size(self):

@@ -42,7 +42,7 @@ class DetectionNet(nn.Module):
             nn.Conv2d(in_channels, inner_channels, kernel_size=3, padding=1),
             nn.LeakyReLU(negative_slope=0.1),
 
-            nn.Conv2d(inner_channels, inner_channels, kernel_size=3, stride=2, padding=1),
+            nn.Conv2d(inner_channels, inner_channels, kernel_size=3, stride=2, padding=1),   # (Ch, 14, 14) -> (Ch, 7, 7)
             nn.LeakyReLU(negative_slope=0.1),
 
             nn.Conv2d(inner_channels, inner_channels, kernel_size=3, padding=1),

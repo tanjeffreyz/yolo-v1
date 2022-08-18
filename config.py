@@ -16,5 +16,3 @@ IMAGE_SIZE = (448, 448)
 S = 7       # Divide each image into a SxS grid
 B = 2       # Number of bounding boxes to predict
 C = 20      # Number of classes in the dataset
-
-TRANSFORM = T.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
