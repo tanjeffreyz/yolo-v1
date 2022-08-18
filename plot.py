@@ -6,14 +6,14 @@ from models import *
 from torch.utils.data import DataLoader
 
 
-WEIGHTS_PATH = 'models/yolo_v1/08_18_2022/11_45_46/weights/final'
+WEIGHTS_PATH = 'models/yolo_v1/08_18_2022/13_16_20/weights/final'
 
 
 def show_test_images():
     classes = utils.load_class_array()
 
-    dataset = YoloPascalVocDataset('test', normalize=True, augment=True)
-    loader = DataLoader(dataset, batch_size=config.BATCH_SIZE)
+    dataset = YoloPascalVocDataset('test', normalize=True, augment=False)
+    loader = DataLoader(dataset, batch_size=8)
 
     model = YOLOv1ResNet()
     model.eval()
