@@ -24,13 +24,14 @@ class SumSquaredErrorLoss(nn.Module):
 
         # Get masks
         bbox_mask = bbox_attr(a, 4) > 0.0
-        obj_ij = torch.zeros_like(bbox_mask).scatter_(          # (batch, S, S, B)
+        obj_i = bbox_mask[:, :, :, 0:1]         # 1 if grid I has any object at all
+        responsible = torch.zeros_like(bbox_mask).scatter_(     # (batch, S, S, B)
             -1,
             torch.argmax(max_iou, dim=-1, keepdim=True),        # (batch, S, S, B)
-            value=1
+            value=1                     # 1 if bounding box is "responsible" for predicting the object
         )
-        noobj_ij = ~obj_ij                      # Opposite, 1's if grid I, bbox J NOT responsible for prediction
-        obj_i = bbox_mask[:, :, :, 0:1]         # 1 if grid I has any object at all
+        obj_ij = obj_i * responsible
+        noobj_ij = ~obj_i               # 1 if no object, all bbox confidences for cells w/o objects should go to 0
 
         # XY position losses
         x_losses = F.mse_loss(
@@ -59,10 +60,6 @@ class SumSquaredErrorLoss(nn.Module):
         )
         dim_losses = width_losses + height_losses
         print('dim_losses', dim_losses.item())
-        # print(torch.sum(bbox_attr(p, 2) < 0).item())
-        # print(torch.sum(bbox_attr(p, 3) < 0).item())
-        # print(torch.sum(bbox_attr(a, 2) < 0).item())
-        # print(torch.sum(bbox_attr(a, 3) < 0).item())
 
         # Confidence losses (target confidence is IOU)
         obj_confidence_losses = F.mse_loss(
