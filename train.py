@@ -36,8 +36,8 @@ if __name__ == '__main__':      # Prevent recursive subprocess creation
     # )
 
     # Load the dataset
-    train_set = YoloPascalVocDataset('train', augment=True)
-    test_set = YoloPascalVocDataset('test', augment=True)
+    train_set = YoloPascalVocDataset('train', normalize=True, augment=True)
+    test_set = YoloPascalVocDataset('test', normalize=True, augment=True)
 
     train_loader = DataLoader(
         train_set,
@@ -84,7 +84,7 @@ if __name__ == '__main__':      # Prevent recursive subprocess creation
     for epoch in tqdm(range(config.WARMUP_EPOCHS + config.EPOCHS), desc='Epoch'):
         model.train()
         train_loss = 0
-        for data, labels in tqdm(train_loader, desc='Train', leave=False):
+        for data, labels, _ in tqdm(train_loader, desc='Train', leave=False):
             data = data.to(device)
             labels = labels.to(device)
 
@@ -110,7 +110,7 @@ if __name__ == '__main__':      # Prevent recursive subprocess creation
             model.eval()
             with torch.no_grad():
                 test_loss = 0
-                for data, labels in tqdm(test_loader, desc='Test', leave=False):
+                for data, labels, _ in tqdm(test_loader, desc='Test', leave=False):
                     data = data.to(device)
                     labels = labels.to(device)
 

@@ -10,7 +10,7 @@ from torch.utils.data import Dataset
 
 
 class YoloPascalVocDataset(Dataset):
-    def __init__(self, set_type, augment=False):
+    def __init__(self, set_type, normalize=False, augment=False):
         assert set_type in {'train', 'test'}
         self.dataset = VOCDetection(
             root=config.DATA_PATH,
@@ -22,6 +22,7 @@ class YoloPascalVocDataset(Dataset):
                 T.Resize(config.IMAGE_SIZE)
             ])
         )
+        self.normalize = normalize
         self.augment = augment
         self.classes = utils.load_class_dict()
 
@@ -39,13 +40,15 @@ class YoloPascalVocDataset(Dataset):
 
     def __getitem__(self, i):
         data, label = self.dataset[i]
+        original_data = data
         x_shift = int((0.2 * random.random() - 0.1) * config.IMAGE_SIZE[0])
         y_shift = int((0.2 * random.random() - 0.1) * config.IMAGE_SIZE[1])
         scale = 1 + 0.2 * random.random()
 
         # Augment images
-        if self.augment:
+        if self.normalize:
             data = TF.normalize(data, mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
+        if self.augment:
             data = TF.affine(data, angle=0.0, scale=scale, translate=(x_shift, y_shift), shear=0.0)
 
         grid_size_x = data.size(dim=2) / config.S  # Images in PyTorch have size (channels, height, width)
@@ -97,7 +100,7 @@ class YoloPascalVocDataset(Dataset):
                 one_hot = torch.zeros(config.C)
                 one_hot[class_index] = 1.0
                 ground_truth[row, col, -config.C:] = one_hot
-        return data, ground_truth
+        return data, ground_truth, original_data
 
     def __len__(self):
         return len(self.dataset)
@@ -106,7 +109,7 @@ class YoloPascalVocDataset(Dataset):
 if __name__ == '__main__':
     # Display data
     obj_classes = utils.load_class_array()
-    train_set = YoloPascalVocDataset('train', augment=True)
+    train_set = YoloPascalVocDataset('train', normalize=True, augment=True)
 
     negative_labels = 0
     smallest = 0
