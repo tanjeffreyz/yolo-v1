@@ -12,16 +12,21 @@ class SumSquaredErrorLoss(nn.Module):
         self.l_noobj = 0.5
 
     def forward(self, p, a):
-        # Calculate IOU of each box
+        # Limit ground truth to first bbox
+        bbox1_end = config.C + 5
+        a = a[..., :bbox1_end]
+
+        # Calculate IOU of each predicted bbox against the ground truth bbox
         iou = get_iou(p, a)                     # (batch, S, S, B, B)
         max_iou = torch.max(iou, dim=-1)[0]     # (batch, S, S, B)
 
         # Get masks
         bbox_mask = bbox_attr(a, 4) > 0.0
-        obj_i = bbox_mask[:, :, :, 0:1]         # 1 if grid I has any object at all
-        responsible = torch.zeros_like(bbox_mask).scatter_(     # (batch, S, S, B)
+        p_template = bbox_attr(p, 4) > 0.0
+        obj_i = bbox_mask[..., 0:1]         # 1 if grid I has any object at all
+        responsible = torch.zeros_like(p_template).scatter_(       # (batch, S, S, B)
             -1,
-            torch.argmax(max_iou, dim=-1, keepdim=True),        # (batch, S, S, B)
+            torch.argmax(max_iou, dim=-1, keepdim=True),                # (batch, S, S, B)
             value=1                         # 1 if bounding box is "responsible" for predicting the object
         )
         obj_ij = obj_i * responsible        # 1 if object exists AND bbox is responsible
@@ -69,8 +74,8 @@ class SumSquaredErrorLoss(nn.Module):
 
         # Classification losses
         class_losses = mse_loss(
-            obj_i * p[:, :, :, 5*config.B:],
-            obj_i * a[:, :, :, 5*config.B:]
+            obj_i * p[..., :config.C],
+            obj_i * a[..., :config.C]
         )
         print('class_losses', class_losses.item())
 
@@ -82,8 +87,10 @@ class SumSquaredErrorLoss(nn.Module):
 
 
 def mse_loss(a, b):
+    flattened_a = torch.flatten(a, end_dim=-2)
+    flattened_b = torch.flatten(b, end_dim=-2).expand_as(flattened_a)
     return F.mse_loss(
-        torch.flatten(a, end_dim=-2),
-        torch.flatten(b, end_dim=-2),
+        flattened_a,
+        flattened_b,
         reduction='sum'
     )

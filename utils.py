@@ -27,8 +27,8 @@ def get_iou(p, a):
 
     intersection_sides = torch.clamp(br - tl, min=0.0)
     # print(intersection_sides)
-    intersection = intersection_sides[:, :, :, :, :, 0] \
-                   * intersection_sides[:, :, :, :, :, 1]       # (batch, S, S, B, B)
+    intersection = intersection_sides[..., 0] \
+                   * intersection_sides[..., 1]       # (batch, S, S, B, B)
 
     # p_sides = p_br - p_tl
     # p_area = p_sides[:, :, :, :, 0] * p_sides[:, :, :, :, 1]
@@ -127,7 +127,8 @@ def get_bounding_boxes(label):
 def bbox_attr(data, i):
     """Returns the Ith attribute of each bounding box in data."""
 
-    return data[:, :, :, i:5*config.B:5]
+    attr_start = config.C + i
+    return data[..., attr_start::5]
 
 
 def scale_bbox_coord(coord, center, scale):
@@ -145,10 +146,12 @@ def plot_boxes(data, labels, classes, threshold=0.5):
     for i in range(labels.size(dim=0)):
         for j in range(labels.size(dim=1)):
             for k in range(config.B):
-                bbox = labels[i, j, 5*k:5*(k+1)]
+                bbox_start = 5 * k + config.C
+                bbox_end = 5 * (k + 1) + config.C
+                bbox = labels[i, j, bbox_start:bbox_end]
                 confidence = bbox[4].item()
                 if confidence > threshold:
-                    class_index = torch.argmax(labels[i, j, -config.C:]).item()
+                    class_index = torch.argmax(labels[i, j, :config.C]).item()
                     width = bbox[2] * config.IMAGE_SIZE[0]
                     height = bbox[3] * config.IMAGE_SIZE[1]
                     bbox_tl = (

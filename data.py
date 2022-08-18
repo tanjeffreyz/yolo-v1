@@ -91,15 +91,15 @@ class YoloPascalVocDataset(Dataset):
                         (y_max - y_min) / config.IMAGE_SIZE[1],         # Height
                         1.0  # Confidence
                     )
-                    bbox_start = 5 * bbox_index
-                    bbox_end = 5 * (bbox_index + 1)
+                    bbox_start = 5 * bbox_index + config.C
+                    bbox_end = 5 * (bbox_index + 1) + config.C
                     ground_truth[row, col, bbox_start:bbox_end] = torch.tensor(bbox_truth)
                     boxes[key] = bbox_index + 1
 
                 # Insert class one-hot encoding into ground truth
                 one_hot = torch.zeros(config.C)
                 one_hot[class_index] = 1.0
-                ground_truth[row, col, -config.C:] = one_hot
+                ground_truth[row, col, :config.C] = one_hot
         return data, ground_truth, original_data
 
     def __len__(self):
@@ -114,7 +114,7 @@ if __name__ == '__main__':
     negative_labels = 0
     smallest = 0
     largest = 0
-    for data, label in train_set:
+    for data, label, _ in train_set:
         negative_labels += torch.sum(label < 0).item()
         smallest = min(smallest, torch.min(data).item())
         largest = max(largest, torch.max(data).item())
