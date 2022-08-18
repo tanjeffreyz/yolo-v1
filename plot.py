@@ -6,7 +6,7 @@ from models import *
 from torch.utils.data import DataLoader
 
 
-WEIGHTS_PATH = 'models/yolo_v1/08_16_2022/23_10_15/weights/final'
+WEIGHTS_PATH = 'models/yolo_v1/08_17_2022/19_05_22/weights/final'
 
 
 def show_test_images():
