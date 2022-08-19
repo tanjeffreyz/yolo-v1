@@ -68,7 +68,7 @@ class SumSquaredErrorLoss(nn.Module):
         print('obj_confidence_losses', obj_confidence_losses.item())
         noobj_confidence_losses = mse_loss(
             noobj_ij * bbox_attr(p, 4),
-            0.0 * max_iou
+            torch.zeros_like(max_iou)
         )
         print('noobj_confidence_losses', noobj_confidence_losses.item())
 

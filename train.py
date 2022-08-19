@@ -44,13 +44,15 @@ if __name__ == '__main__':      # Prevent recursive subprocess creation
         batch_size=config.BATCH_SIZE,
         num_workers=8,
         persistent_workers=True,
+        drop_last=True,
         shuffle=True
     )
     test_loader = DataLoader(
         test_set,
         batch_size=config.BATCH_SIZE,
         num_workers=8,
-        persistent_workers=True
+        persistent_workers=True,
+        drop_last=True
     )
 
     # Create folders

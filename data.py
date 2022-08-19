@@ -89,7 +89,7 @@ class YoloPascalVocDataset(Dataset):
                         (mid_y - row * grid_size_y) / grid_size_y,      # Y coordinate relative to grid square
                         (x_max - x_min) / config.IMAGE_SIZE[0],         # Width
                         (y_max - y_min) / config.IMAGE_SIZE[1],         # Height
-                        1.0  # Confidence
+                        1.0                                             # Confidence
                     )
                     bbox_start = 5 * bbox_index + config.C
                     bbox_end = 5 * (bbox_index + 1) + config.C
