@@ -32,7 +32,7 @@ def show_test_images():
                 )
                 utils.plot_boxes(
                     original[i, :, :, :],
-                    labels[i, :, :, :config.C+5],
+                    labels[i, :, :, :],
                     classes,
                     color='green'
                 )

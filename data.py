@@ -56,7 +56,8 @@ class YoloPascalVocDataset(Dataset):
 
         # Process bounding boxes into the SxSx(5*B+C) ground truth tensor
         boxes = {}
-        depth = 5 * config.B + config.C  # 5 numbers per bbox, then one-hot encoding of label
+        class_names = {}                    # Track what class each grid cell has been assigned to
+        depth = 5 * config.B + config.C     # 5 numbers per bbox, then one-hot encoding of label
         ground_truth = torch.zeros((config.S, config.S, depth))
         for j, bbox_pair in enumerate(utils.get_bounding_boxes(label)):
             name, coords = bbox_pair
@@ -78,28 +79,31 @@ class YoloPascalVocDataset(Dataset):
             mid_y = (y_max + y_min) / 2
             col = int(mid_x // grid_size_x)
             row = int(mid_y // grid_size_y)
+            cell = (row, col)
 
-            # Insert bounding box into ground truth tensor
-            if 0 <= col < config.S and 0 <= row < config.S:
-                key = (row, col)
-                bbox_index = boxes.get(key, 0)
-                if bbox_index < config.B:
-                    bbox_truth = (
-                        (mid_x - col * grid_size_x) / config.IMAGE_SIZE[0],      # X coordinate relative to grid square
-                        (mid_y - row * grid_size_y) / config.IMAGE_SIZE[1],      # Y coordinate relative to grid square
-                        (x_max - x_min) / config.IMAGE_SIZE[0],         # Width
-                        (y_max - y_min) / config.IMAGE_SIZE[1],         # Height
-                        1.0                                             # Confidence
-                    )
-                    bbox_start = 5 * bbox_index + config.C
-                    bbox_end = 5 * (bbox_index + 1) + config.C
-                    ground_truth[row, col, bbox_start:bbox_end] = torch.tensor(bbox_truth)
-                    boxes[key] = bbox_index + 1
-
+            if cell not in class_names or name == class_names[cell]:
                 # Insert class one-hot encoding into ground truth
                 one_hot = torch.zeros(config.C)
                 one_hot[class_index] = 1.0
                 ground_truth[row, col, :config.C] = one_hot
+                class_names[cell] = name
+
+                # Insert bounding box into ground truth tensor
+                if 0 <= col < config.S and 0 <= row < config.S:
+                    bbox_index = boxes.get(cell, 0)
+                    if bbox_index < config.B:
+                        bbox_truth = (
+                            (mid_x - col * grid_size_x) / config.IMAGE_SIZE[0],     # X coord relative to grid square
+                            (mid_y - row * grid_size_y) / config.IMAGE_SIZE[1],     # Y coord relative to grid square
+                            (x_max - x_min) / config.IMAGE_SIZE[0],                 # Width
+                            (y_max - y_min) / config.IMAGE_SIZE[1],                 # Height
+                            1.0                                                     # Confidence
+                        )
+                        bbox_start = 5 * bbox_index + config.C
+                        bbox_end = 5 * (bbox_index + 1) + config.C
+                        ground_truth[row, col, bbox_start:bbox_end] = torch.tensor(bbox_truth)
+                        boxes[cell] = bbox_index + 1
+
         return data, ground_truth, original_data
 
     def __len__(self):
