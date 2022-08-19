@@ -79,17 +79,17 @@ class YoloPascalVocDataset(Dataset):
             mid_y = (y_max + y_min) / 2
             col = int(mid_x // grid_size_x)
             row = int(mid_y // grid_size_y)
-            cell = (row, col)
 
-            if cell not in class_names or name == class_names[cell]:
-                # Insert class one-hot encoding into ground truth
-                one_hot = torch.zeros(config.C)
-                one_hot[class_index] = 1.0
-                ground_truth[row, col, :config.C] = one_hot
-                class_names[cell] = name
+            if 0 <= col < config.S and 0 <= row < config.S:
+                cell = (row, col)
+                if cell not in class_names or name == class_names[cell]:
+                    # Insert class one-hot encoding into ground truth
+                    one_hot = torch.zeros(config.C)
+                    one_hot[class_index] = 1.0
+                    ground_truth[row, col, :config.C] = one_hot
+                    class_names[cell] = name
 
-                # Insert bounding box into ground truth tensor
-                if 0 <= col < config.S and 0 <= row < config.S:
+                    # Insert bounding box into ground truth tensor
                     bbox_index = boxes.get(cell, 0)
                     if bbox_index < config.B:
                         bbox_truth = (
