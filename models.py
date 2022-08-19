@@ -54,7 +54,7 @@ class DetectionNet(nn.Module):
             nn.Flatten(),
 
             nn.Linear(7 * 7 * inner_channels, 4096),
-            nn.Dropout(),
+            # nn.Dropout(),
             nn.LeakyReLU(negative_slope=0.1),
 
             nn.Linear(4096, config.S * config.S * self.depth)
