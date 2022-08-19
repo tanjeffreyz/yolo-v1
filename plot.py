@@ -30,6 +30,12 @@ def show_test_images():
                     classes,
                     threshold=0.1
                 )
+                utils.plot_boxes(
+                    original[i, :, :, :],
+                    labels[i, :, :, :config.C+5],
+                    classes,
+                    color='green'
+                )
 
 
 if __name__ == '__main__':

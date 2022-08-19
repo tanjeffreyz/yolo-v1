@@ -135,7 +135,7 @@ def scale_bbox_coord(coord, center, scale):
     return ((coord - center) * scale) + center
 
 
-def plot_boxes(data, labels, classes, threshold=0.5):
+def plot_boxes(data, labels, classes, color='orange', threshold=0.5):
     """Plots bounding boxes on the given image."""
 
     grid_size_x = data.size(dim=2) / config.S
@@ -145,18 +145,18 @@ def plot_boxes(data, labels, classes, threshold=0.5):
     plt.imshow(data.permute(1, 2, 0))
     for i in range(labels.size(dim=0)):
         for j in range(labels.size(dim=1)):
-            for k in range(config.B):
+            for k in range((labels.size(dim=2) - config.C) // 5):
                 bbox_start = 5 * k + config.C
                 bbox_end = 5 * (k + 1) + config.C
                 bbox = labels[i, j, bbox_start:bbox_end]
-                confidence = bbox[4].item()
+                class_index = torch.argmax(labels[i, j, :config.C]).item()
+                confidence = labels[i, j, class_index].item() * bbox[4].item()          # pr(c) * IOU
                 if confidence > threshold:
-                    class_index = torch.argmax(labels[i, j, :config.C]).item()
                     width = bbox[2] * config.IMAGE_SIZE[0]
                     height = bbox[3] * config.IMAGE_SIZE[1]
                     bbox_tl = (
-                        (bbox[0] + j) * grid_size_x - width / 2,
-                        (bbox[1] + i) * grid_size_y - height / 2
+                        bbox[0] * config.IMAGE_SIZE[0] + j * grid_size_x - width / 2,
+                        bbox[1] * config.IMAGE_SIZE[1] + i * grid_size_y - height / 2
                     )
                     rect = patches.Rectangle(
                         bbox_tl,
@@ -164,14 +164,14 @@ def plot_boxes(data, labels, classes, threshold=0.5):
                         height,
                         facecolor='none',
                         linewidth=1,
-                        edgecolor='orange'
+                        edgecolor=color
                     )
                     ax.add_patch(rect)
                     ax.text(
                         bbox_tl[0],
                         bbox_tl[1],
                         f'{classes[class_index]} {round(confidence * 100, 1)}%',
-                        bbox=dict(facecolor='orange', edgecolor='none'),
+                        bbox=dict(facecolor=color, edgecolor='none'),
                         fontsize=6
                     )
     plt.show()
