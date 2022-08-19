@@ -12,10 +12,6 @@ class SumSquaredErrorLoss(nn.Module):
         self.l_noobj = 0.5
 
     def forward(self, p, a):
-        # Limit ground truth to first bbox
-        bbox1_end = config.C + 5
-        a = a[..., :bbox1_end]
-
         # Calculate IOU of each predicted bbox against the ground truth bbox
         iou = get_iou(p, a)                     # (batch, S, S, B, B)
         max_iou = torch.max(iou, dim=-1)[0]     # (batch, S, S, B)

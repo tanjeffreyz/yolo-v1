@@ -99,9 +99,11 @@ class YoloPascalVocDataset(Dataset):
                             (y_max - y_min) / config.IMAGE_SIZE[1],                 # Height
                             1.0                                                     # Confidence
                         )
+
+                        # Fill all bbox slots with current bbox (starting from current bbox slot, avoid overriding prev)
+                        # This prevents having "dead" boxes (zeros) at the end, which messes up IOU loss calculations
                         bbox_start = 5 * bbox_index + config.C
-                        bbox_end = 5 * (bbox_index + 1) + config.C
-                        ground_truth[row, col, bbox_start:bbox_end] = torch.tensor(bbox_truth)
+                        ground_truth[row, col, bbox_start:] = torch.tensor(bbox_truth).repeat(config.B - bbox_index)
                         boxes[cell] = bbox_index + 1
 
         return data, ground_truth, original_data
