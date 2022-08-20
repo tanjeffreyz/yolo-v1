@@ -1,42 +1,45 @@
 import torch
 import config
+import os
 import utils
+from tqdm import tqdm
 from data import YoloPascalVocDataset
 from models import *
 from torch.utils.data import DataLoader
 
 
-WEIGHTS_PATH = 'models/yolo_v1/08_18_2022/19_35_41/weights/final'
+MODEL_DIR = 'models/yolo_v1/08_19_2022/08_42_58'
 
 
-def show_test_images():
+def plot_test_images():
     classes = utils.load_class_array()
 
     dataset = YoloPascalVocDataset('test', normalize=True, augment=False)
-    loader = DataLoader(dataset, batch_size=8)
+    loader = DataLoader(dataset, batch_size=8, shuffle=True)
 
     model = YOLOv1ResNet()
     model.eval()
-    model.load_state_dict(torch.load(WEIGHTS_PATH))
+    model.load_state_dict(torch.load(os.path.join(MODEL_DIR, 'weights', 'final')))
 
+    count = 0
     with torch.no_grad():
-        for image, labels, original in loader:
-            print(image.size(), '->', labels.size())
+        for image, labels, original in tqdm(loader):
             predictions = model.forward(image)
             for i in range(image.size(dim=0)):
                 utils.plot_boxes(
                     original[i, :, :, :],
                     predictions[i, :, :, :],
                     classes,
-                    threshold=0.1
+                    file=os.path.join('results', f'{count}')
                 )
-                utils.plot_boxes(
-                    original[i, :, :, :],
-                    labels[i, :, :, :],
-                    classes,
-                    color='green'
-                )
+                # utils.plot_boxes(
+                #     original[i, :, :, :],
+                #     labels[i, :, :, :],
+                #     classes,
+                #     color='green'
+                # )
+                count += 1
 
 
 if __name__ == '__main__':
-    show_test_images()
+    plot_test_images()

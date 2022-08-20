@@ -3,13 +3,13 @@ import json
 import os
 import config
 import matplotlib.patches as patches
+import torchvision.transforms as T
+from PIL import ImageDraw, ImageFont
 from matplotlib import pyplot as plt
 
 
 def get_iou(p, a):
     p_tl, p_br = bbox_to_coords(p)          # (batch, S, S, B, 2)
-    # print(p_tl)
-    # print(p_br)
     a_tl, a_br = bbox_to_coords(a)
 
     # Largest top-left corner and smallest bottom-right corner give the intersection
@@ -22,21 +22,14 @@ def get_iou(p, a):
         p_br.unsqueeze(4).expand(coords_join_size),
         a_br.unsqueeze(3).expand(coords_join_size)
     )
-    # print(tl)
-    # print(br)
 
     intersection_sides = torch.clamp(br - tl, min=0.0)
-    # print(intersection_sides)
     intersection = intersection_sides[..., 0] \
                    * intersection_sides[..., 1]       # (batch, S, S, B, B)
 
-    # p_sides = p_br - p_tl
-    # p_area = p_sides[:, :, :, :, 0] * p_sides[:, :, :, :, 1]
     p_area = bbox_attr(p, 2) * bbox_attr(p, 3)                  # (batch, S, S, B)
     p_area = p_area.unsqueeze(4).expand_as(intersection)        # (batch, S, S, B, 1) -> (batch, S, S, B, B)
 
-    # a_sides = a_br - a_tl
-    # a_area = a_sides[:, :, :, :, 0] * a_sides[:, :, :, :, 1]
     a_area = bbox_attr(a, 2) * bbox_attr(a, 3)                  # (batch, S, S, B)
     a_area = a_area.unsqueeze(3).expand_as(intersection)        # (batch, S, S, 1, B) -> (batch, S, S, B, B)
 
@@ -135,43 +128,104 @@ def scale_bbox_coord(coord, center, scale):
     return ((coord - center) * scale) + center
 
 
-def plot_boxes(data, labels, classes, color='orange', threshold=0.5):
+def get_overlap(a, b):
+    """Returns proportion overlap between two boxes in the form (tl, width, height, confidence, class)."""
+
+    a_tl, a_width, a_height, _, _ = a
+    b_tl, b_width, b_height, _, _ = b
+
+    i_tl = (
+        max(a_tl[0], b_tl[0]),
+        max(a_tl[1], b_tl[1])
+    )
+    i_br = (
+        min(a_tl[0] + a_width, b_tl[0] + b_width),
+        min(a_tl[1] + a_height, b_tl[1] + b_height),
+    )
+
+    intersection = max(0, i_br[0] - i_tl[0]) \
+                   * max(0, i_br[1] - i_tl[1])
+
+    a_area = a_width * a_height
+    b_area = b_width * b_height
+
+    a_intersection = b_intersection = intersection
+    if a_area == 0:
+        a_intersection = 0
+        a_area = config.EPSILON
+    if b_area == 0:
+        b_intersection = 0
+        b_area = config.EPSILON
+
+    return torch.max(
+        a_intersection / a_area,
+        b_intersection / b_area
+    ).item()
+
+
+def plot_boxes(data, labels, classes, color='orange', min_confidence=0.2, max_overlap=0.5, file=None):
     """Plots bounding boxes on the given image."""
 
     grid_size_x = data.size(dim=2) / config.S
     grid_size_y = data.size(dim=1) / config.S
+    m = labels.size(dim=0)
+    n = labels.size(dim=1)
 
-    fig, ax = plt.subplots()
-    plt.imshow(data.permute(1, 2, 0))
-    for i in range(labels.size(dim=0)):
-        for j in range(labels.size(dim=1)):
+    bboxes = []
+    for i in range(m):
+        for j in range(n):
             for k in range((labels.size(dim=2) - config.C) // 5):
                 bbox_start = 5 * k + config.C
                 bbox_end = 5 * (k + 1) + config.C
                 bbox = labels[i, j, bbox_start:bbox_end]
                 class_index = torch.argmax(labels[i, j, :config.C]).item()
                 confidence = labels[i, j, class_index].item() * bbox[4].item()          # pr(c) * IOU
-                if confidence > threshold:
+                if confidence > min_confidence:
                     width = bbox[2] * config.IMAGE_SIZE[0]
                     height = bbox[3] * config.IMAGE_SIZE[1]
-                    bbox_tl = (
+                    tl = (
                         bbox[0] * config.IMAGE_SIZE[0] + j * grid_size_x - width / 2,
                         bbox[1] * config.IMAGE_SIZE[1] + i * grid_size_y - height / 2
                     )
-                    rect = patches.Rectangle(
-                        bbox_tl,
-                        width,
-                        height,
-                        facecolor='none',
-                        linewidth=1,
-                        edgecolor=color
-                    )
-                    ax.add_patch(rect)
-                    ax.text(
-                        bbox_tl[0],
-                        bbox_tl[1],
-                        f'{classes[class_index]} {round(confidence * 100, 1)}%',
-                        bbox=dict(facecolor=color, edgecolor='none'),
-                        fontsize=6
-                    )
-    plt.show()
+                    bboxes.append([tl, width, height, confidence, class_index])
+
+    # Sort by highest to lowest confidence
+    bboxes = sorted(bboxes, key=lambda x: x[3], reverse=True)
+
+    # Calculate IOUs between each pair of boxes
+    num_boxes = len(bboxes)
+    iou = [[0 for _ in range(num_boxes)] for _ in range(num_boxes)]
+    for i in range(num_boxes):
+        for j in range(num_boxes):
+            iou[i][j] = get_overlap(bboxes[i], bboxes[j])
+
+    # Non-maximal Suppression and render image
+    image = T.ToPILImage()(data)
+    draw = ImageDraw.Draw(image)
+    discarded = set()
+    for i in range(num_boxes):
+        if i not in discarded:
+            tl, width, height, confidence, class_index = bboxes[i]
+
+            # Decrease confidence of other conflicting bboxes
+            for j in range(num_boxes):
+                other_class = bboxes[j][4]
+                if j != i and other_class == class_index and iou[i][j] > max_overlap:
+                    discarded.add(j)
+
+            # Annotate image
+            draw.rectangle((tl, (tl[0] + width, tl[1] + height)), outline='orange')
+            text_pos = (tl[0], tl[1] - 11)
+            text = f'{classes[class_index]} {round(confidence * 100, 1)}%'
+            text_bbox = draw.textbbox(text_pos, text)
+            draw.rectangle(text_bbox, fill='orange')
+            draw.text(text_pos, text)
+    if file is None:
+        image.show()
+    else:
+        output_dir = os.path.dirname(file)
+        if not os.path.exists(output_dir):
+            os.makedirs(output_dir)
+        if not file.endswith('.png'):
+            file += '.png'
+        image.save(file)
