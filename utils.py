@@ -199,7 +199,7 @@ def plot_boxes(data, labels, classes, color='orange', min_confidence=0.2, max_ov
         for j in range(num_boxes):
             iou[i][j] = get_overlap(bboxes[i], bboxes[j])
 
-    # Non-maximal Suppression and render image
+    # Non-maximum suppression and render image
     image = T.ToPILImage()(data)
     draw = ImageDraw.Draw(image)
     discarded = set()
