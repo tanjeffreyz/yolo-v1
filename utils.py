@@ -215,7 +215,7 @@ def plot_boxes(data, labels, classes, color='orange', min_confidence=0.2, max_ov
 
             # Annotate image
             draw.rectangle((tl, (tl[0] + width, tl[1] + height)), outline='orange')
-            text_pos = (tl[0], tl[1] - 11)
+            text_pos = (max(0, tl[0]), max(0, tl[1] - 11))
             text = f'{classes[class_index]} {round(confidence * 100, 1)}%'
             text_bbox = draw.textbbox(text_pos, text)
             draw.rectangle(text_bbox, fill='orange')

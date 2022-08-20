@@ -1,9 +1,9 @@
 
 <!--
-
+mlpi
 title: You Only Look Once: Unified, Real-Time Object Detection (YOLOv1)
 category: Architectures/Convolutional Neural Networks
-images:
+images: results/many_people_horse.png, results/multiple_cars.png, results/person_motorbike.png, results/multiple_people.png, results/many_people_motorbike.png
 -->
 
 
@@ -12,8 +12,20 @@ images:
 PyTorch implementation of the YOLO architecture presented in "You Only Look Once: Unified, Real-Time Object Detection" by Joseph Redmon, Santosh Divvala, Ross Girshick, Ali Farhadi
 
 
-## Results
+## Methods
+PyTorch's pretrained `ResNet50` architecture was used as the backbone for the model instead of `Darknet`. However, the detection
+layers at the end of the model follow those described in the paper. The data was augmented by randomly scaling dimensions, 
+shifting position, and adjusting hue/saturation values by up to 20% of their original values.
 
+
+## Results
+<div align="center">
+    <img src="results/many_people_horse.png" />
+    <img src="results/multiple_cars.png" />
+    <img src="results/person_motorbike.png" />
+    <img src="results/multiple_people.png" />
+    <img src="results/many_people_motorbike.png" />
+</div>
 
 
 ## Notes
@@ -44,13 +56,6 @@ the number of objects that were present but missed by the model. Together, `TP +
 <div align="center">
     <img src="resources/recall.png" height="100px" />
 </div>
-
-
-### Mean Average Precision (mAP)
-
-
-
-
 
 
 ## References

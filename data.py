@@ -50,6 +50,8 @@ class YoloPascalVocDataset(Dataset):
             data = TF.normalize(data, mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
         if self.augment:
             data = TF.affine(data, angle=0.0, scale=scale, translate=(x_shift, y_shift), shear=0.0)
+            data = TF.adjust_hue(data, 0.2 * random.random() - 0.1)
+            data = TF.adjust_saturation(data, 0.2 * random.random() + 0.9)
 
         grid_size_x = data.size(dim=2) / config.S  # Images in PyTorch have size (channels, height, width)
         grid_size_y = data.size(dim=1) / config.S
@@ -124,6 +126,6 @@ if __name__ == '__main__':
         negative_labels += torch.sum(label < 0).item()
         smallest = min(smallest, torch.min(data).item())
         largest = max(largest, torch.max(data).item())
-        utils.plot_boxes(data, label, obj_classes)
+        utils.plot_boxes(data, label, obj_classes, max_overlap=float('inf'))
     print('num_negatives', negative_labels)
     print('dist', smallest, largest)
