@@ -20,11 +20,12 @@ shifting position, and adjusting hue/saturation values by up to 20% of their ori
 
 ## Results
 <div align="center">
-    <img src="results/many_people_horse.png" />
-    <img src="results/multiple_cars.png" />
-    <img src="results/person_motorbike.png" />
-    <img src="results/multiple_people.png" />
-    <img src="results/many_people_motorbike.png" />
+    <img src="results/many_people_horse.png" width="49%" />
+    <img src="results/multiple_cars.png" width="49%" />
+    <img src="results/person_motorbike.png" width="49%" />
+    <img src="results/multiple_people.png" width="49%" />
+    <img src="results/many_people_motorbike.png" width="49%" />
+    <img src="results/many_people.png" width="49%" />
 </div>
 
 
