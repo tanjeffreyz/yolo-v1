@@ -3,7 +3,7 @@
 mlpi
 title: You Only Look Once: Unified, Real-Time Object Detection (YOLOv1)
 category: Architectures/Convolutional Neural Networks
-images: results/many_people_horse.png, results/multiple_cars.png, results/person_motorbike.png, results/multiple_people.png, results/many_people_motorbike.png
+images: results/many_people_horse.png, results/multiple_cars.png, results/person_motorbike.png, results/multiple_people.png, results/many_people_motorbike.png, results/many_people.png
 -->
 
 
