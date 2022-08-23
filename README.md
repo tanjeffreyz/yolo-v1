@@ -28,6 +28,8 @@ shifting position, and adjusting hue/saturation values by up to 20% of their ori
     <img src="results/many_people.png" width="49%" />
 </div>
 
+Although the results are rather self-explanatory, it is interesting to note that YOLOv1 has trouble detecting tightly grouped objects as well as small, distant ones.
+
 
 ## Notes
 ### Intersection Over Union (IOU)
