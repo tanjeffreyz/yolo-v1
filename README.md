@@ -20,6 +20,9 @@ shifting position, and adjusting hue/saturation values by up to 20% of their ori
 
 
 ## Results
+Overall, the bounding boxes look convincing, though it is interesting to note that YOLOv1 has trouble detecting tightly grouped objects as well as small, distant ones.
+Additionally, the fully vectorized `SumSquaredLoss` function achieves roughly a 4x speedup in training time compared to using a for-loop to determine bounding box responsibility.
+
 <div align="center">
     <img src="results/many_people_horse.png" width="49%" />
     <img src="results/multiple_cars.png" width="49%" />
@@ -28,8 +31,6 @@ shifting position, and adjusting hue/saturation values by up to 20% of their ori
     <img src="results/many_people_motorbike.png" width="49%" />
     <img src="results/many_people.png" width="49%" />
 </div>
-
-It is interesting to note that YOLOv1 has trouble detecting tightly grouped objects as well as small, distant ones.
 
 
 ## Notes
