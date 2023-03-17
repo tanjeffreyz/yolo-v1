@@ -14,8 +14,8 @@ PyTorch implementation of the YOLO architecture presented in "You Only Look Once
 
 
 ## Methods
-PyTorch's pretrained `ResNet50` architecture was used as the backbone for the model instead of `Darknet`. However, the detection
-layers at the end of the model follow those described in the paper. The data was augmented by randomly scaling dimensions, 
+For the sake of convenience, PyTorch's pretrained `ResNet50` architecture was used as the backbone for the model instead of `Darknet`. However, the detection
+layers at the end of the model exactly follow those described in the paper. The data was augmented by randomly scaling dimensions, 
 shifting position, and adjusting hue/saturation values by up to 20% of their original values.
 
 
