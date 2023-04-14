@@ -18,6 +18,8 @@ if __name__ == '__main__':      # Prevent recursive subprocess creation
 
     model = YOLOv1ResNet().to(device)
     loss_function = SumSquaredErrorLoss()
+
+    # Adam works better
     # optimizer = torch.optim.SGD(
     #     model.parameters(),
     #     lr=config.LEARNING_RATE,
@@ -29,7 +31,7 @@ if __name__ == '__main__':      # Prevent recursive subprocess creation
         lr=config.LEARNING_RATE
     )
 
-    # Learning rate scheduler
+    # Learning rate scheduler (NOT NEEDED)
     # scheduler = torch.optim.lr_scheduler.LambdaLR(
     #     optimizer,
     #     lr_lambda=utils.scheduler_lambda
@@ -92,9 +94,7 @@ if __name__ == '__main__':      # Prevent recursive subprocess creation
 
             optimizer.zero_grad()
             predictions = model.forward(data)
-            print('\n#############################')
             loss = loss_function(predictions, labels)
-            print('TOTAL_LOSS', loss.item())
             loss.backward()
             optimizer.step()
 
@@ -117,9 +117,7 @@ if __name__ == '__main__':      # Prevent recursive subprocess creation
                     labels = labels.to(device)
 
                     predictions = model.forward(data)
-                    print('\n#############################')
                     loss = loss_function(predictions, labels)
-                    print('TOTAL_LOSS', loss.item())
 
                     test_loss += loss.item() / len(test_loader)
                     del data, labels

@@ -127,5 +127,5 @@ if __name__ == '__main__':
         smallest = min(smallest, torch.min(data).item())
         largest = max(largest, torch.max(data).item())
         utils.plot_boxes(data, label, obj_classes, max_overlap=float('inf'))
-    print('num_negatives', negative_labels)
-    print('dist', smallest, largest)
+    # print('num_negatives', negative_labels)
+    # print('dist', smallest, largest)

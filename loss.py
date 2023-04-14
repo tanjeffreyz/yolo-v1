@@ -38,7 +38,7 @@ class SumSquaredErrorLoss(nn.Module):
             obj_ij * bbox_attr(a, 1)
         )
         pos_losses = x_losses + y_losses
-        print('pos_losses', pos_losses.item())
+        # print('pos_losses', pos_losses.item())
 
         # Bbox dimension losses
         p_width = bbox_attr(p, 2)
@@ -54,26 +54,26 @@ class SumSquaredErrorLoss(nn.Module):
             obj_ij * torch.sqrt(a_height)
         )
         dim_losses = width_losses + height_losses
-        print('dim_losses', dim_losses.item())
+        # print('dim_losses', dim_losses.item())
 
         # Confidence losses (target confidence is IOU)
         obj_confidence_losses = mse_loss(
             obj_ij * bbox_attr(p, 4),
             obj_ij * torch.ones_like(max_iou)
         )
-        print('obj_confidence_losses', obj_confidence_losses.item())
+        # print('obj_confidence_losses', obj_confidence_losses.item())
         noobj_confidence_losses = mse_loss(
             noobj_ij * bbox_attr(p, 4),
             torch.zeros_like(max_iou)
         )
-        print('noobj_confidence_losses', noobj_confidence_losses.item())
+        # print('noobj_confidence_losses', noobj_confidence_losses.item())
 
         # Classification losses
         class_losses = mse_loss(
             obj_i * p[..., :config.C],
             obj_i * a[..., :config.C]
         )
-        print('class_losses', class_losses.item())
+        # print('class_losses', class_losses.item())
 
         total = self.l_coord * (pos_losses + dim_losses) \
                 + obj_confidence_losses \
