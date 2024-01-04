@@ -46,12 +46,12 @@ class YoloPascalVocDataset(Dataset):
         scale = 1 + 0.2 * random.random()
 
         # Augment images
-        if self.normalize:
-            data = TF.normalize(data, mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
         if self.augment:
             data = TF.affine(data, angle=0.0, scale=scale, translate=(x_shift, y_shift), shear=0.0)
             data = TF.adjust_hue(data, 0.2 * random.random() - 0.1)
             data = TF.adjust_saturation(data, 0.2 * random.random() + 0.9)
+        if self.normalize:
+            data = TF.normalize(data, mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
 
         grid_size_x = data.size(dim=2) / config.S  # Images in PyTorch have size (channels, height, width)
         grid_size_y = data.size(dim=1) / config.S
